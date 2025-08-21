@@ -4,7 +4,7 @@
 - [x] Stworzenie roadmapy
 - [x] Utworzenie repozytorium GitHub.
 - [x] Stworzenie struktury katalogow
-- [ ] Zebranie dokumentacji
+- [x] Zebranie dokumentacji
 
 ## Faza 0 Przygotowanie srodowiska (TT: 1 dzien)
 - [ ] Testy toolchaina
