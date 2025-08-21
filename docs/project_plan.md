@@ -2,7 +2,7 @@
 
 ## Faza -1 setup dokumentacji (TT: 0-1 dzien)
 - [x] Stworzenie roadmapy
-- [ ] Utworzenie repozytorium GitHub.
+- [x] Utworzenie repozytorium GitHub.
 - [x] Stworzenie struktury katalogow
 - [ ] Zebranie dokumentacji
 
