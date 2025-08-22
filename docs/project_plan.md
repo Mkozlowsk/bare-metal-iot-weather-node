@@ -7,9 +7,10 @@
 - [x] Zebranie dokumentacji
 
 ## Faza 0 Przygotowanie srodowiska (TT: 1 dzien)
+- [ ] Zakup devboarda
 - [ ] Testy toolchaina
-- [ ] Przygotowanie szablonu struktury plikow
-- [ ] Przygotowanie make
+- [x] Przygotowanie szablonu struktury plikow
+- [x] Przygotowanie make
 - [ ] Przygotowanie basic CI
 - [ ] Sprawdzenie kompilacji testowego projektu
 
