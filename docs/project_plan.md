@@ -8,10 +8,10 @@
 
 ## Faza 0 Przygotowanie srodowiska (TT: 1 dzien)
 - [ ] Zakup devboarda
-- [ ] Testy toolchaina
 - [x] Przygotowanie szablonu struktury plikow
 - [x] Przygotowanie make
 - [ ] Przygotowanie basic CI
+- [ ] Testy toolchaina
 - [ ] Sprawdzenie kompilacji testowego projektu
 
 ## Faza 1 Podstawowy software (TT: 3 tygodnie)
