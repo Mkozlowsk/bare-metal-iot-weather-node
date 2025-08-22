@@ -1,0 +1,27 @@
+# ==================== Firmware (STM32) ====================
+# Ignoruj pliki wynikowe kompilacji
+firmware/*.o
+firmware/*.elf
+firmware/*.bin
+firmware/*.map
+firmware/*.lst
+
+# Ignoruj całe katalogi buildowe (jeśli takie utworzysz)
+firmware/build/
+firmware/debug/
+
+# ==================== Software (RPi) ====================
+# Ignoruj pliki Pythona
+software/__pycache__/
+software/*.pyc
+
+# ==================== Hardware (KiCad) ====================
+# Ignoruj pliki wynikowe KiCad
+hardware/*.kicad_pcb-bak
+hardware/*.kicad_sch-bak
+hardware/*.net
+hardware/*.pro
+
+# Ignoruj katalogi z outputem Gerberów/PDFów
+hardware/gerbers/
+hardware/pdf/
