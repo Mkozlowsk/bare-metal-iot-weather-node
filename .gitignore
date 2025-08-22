@@ -6,7 +6,7 @@ firmware/*.bin
 firmware/*.map
 firmware/*.lst
 
-# Ignoruj całe katalogi buildowe (jeśli takie utworzysz)
+# Ignoruj całe katalogi buildowe
 firmware/build/
 firmware/debug/
 
