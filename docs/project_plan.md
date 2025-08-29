@@ -6,13 +6,13 @@
 - [x] Stworzenie struktury katalogow
 - [x] Zebranie dokumentacji
 
-## Faza 0 Przygotowanie srodowiska (TT: 1 dzien)
-- [ ] Zakup devboarda
+## Faza 0 Przygotowanie srodowiska (TT: 1 dzien + 3dni czekania na devboarda)
+- [x] Zakup devboarda
 - [x] Przygotowanie szablonu struktury plikow
 - [x] Przygotowanie make
 - [ ] Przygotowanie basic CI
-- [ ] Testy toolchaina
-- [ ] Sprawdzenie kompilacji testowego projektu
+- [x] Testy toolchaina (potrzebny devboard)
+- [x] Sprawdzenie kompilacji testowego projektu
 
 ## Faza 1 Podstawowy software (TT: 3 tygodnie)
 - [ ] Przygotowywanie rozszerzonego CI (W trakcie pozostalych pkt)
