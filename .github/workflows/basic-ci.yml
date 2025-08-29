@@ -1,0 +1,25 @@
+name: Basic CI - Compilation Check
+
+on: [push, pull_request]
+
+jobs:
+  build-firmware:
+    name: Build Firmware
+    runs-on: ubuntu-22.04
+    defaults:
+      run:
+        working-directory: firmware  # Wszystkie komendy uruchamiane z poziomu folderu firmware
+
+    steps:
+    - name: Checkout code + submodules
+      uses: actions/checkout@v4
+      with:
+        submodules: 'recursive'  # Ważne! Pobierze również submoduł STM32CubeL4
+
+    - name: Install ARM GCC Toolchain
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc-arm-none-eabi
+
+    - name: Compile Project
+      run: make all
