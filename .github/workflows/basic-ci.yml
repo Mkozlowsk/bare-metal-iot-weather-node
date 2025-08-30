@@ -18,13 +18,13 @@ jobs:
         submodules: 'recursive'
         fetch-depth: 1 
       
-    - uses: actions/checkout@v4
-    - uses: awalsh128/cache-apt-pkgs-action@latest
+    - name: Install & Cache ARM Toolchain
+      uses: awalsh128/cache-apt-pkgs-action@latest
       with:
         packages: gcc-arm-none-eabi
         version: 1.0
 
-        
+
     - name: Verify toolchain
       run: |
         arm-none-eabi-gcc --version
