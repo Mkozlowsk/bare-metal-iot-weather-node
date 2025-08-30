@@ -1,6 +1,8 @@
 name: Basic CI - Compilation Check
 
 on: [push, pull_request]
+env:
+  CACHE_KEY: toolchain-arm-gcc-1
 
 jobs:
   build-firmware:
@@ -16,10 +18,24 @@ jobs:
       with:
         submodules: 'recursive' 
 
+    - name: Cache ARM GCC Toolchain
+      uses: actions/cache@v3
+      id: cache-toolchain
+      with:
+        path: /usr/bin/arm-none-eabi-*
+        key: ${{ runner.os }}-${{ env.CACHE_KEY }}
+
     - name: Install ARM GCC Toolchain
       run: |
         sudo apt-get update
         sudo apt-get install -y gcc-arm-none-eabi
+
+
+
+    - name: Verify toolchain
+      run: |
+        arm-none-eabi-gcc --version
+        which arm-none-eabi-gcc
 
     - name: Compile Project
       run: make all
