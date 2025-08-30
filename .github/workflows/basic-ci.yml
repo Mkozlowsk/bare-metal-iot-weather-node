@@ -8,13 +8,13 @@ jobs:
     runs-on: ubuntu-22.04
     defaults:
       run:
-        working-directory: firmware  # Wszystkie komendy uruchamiane z poziomu folderu firmware
+        working-directory: firmware
 
     steps:
     - name: Checkout code + submodules
       uses: actions/checkout@v4
       with:
-        submodules: 'recursive'  # Ważne! Pobierze również submoduł STM32CubeL4
+        submodules: 'recursive' 
 
     - name: Install ARM GCC Toolchain
       run: |

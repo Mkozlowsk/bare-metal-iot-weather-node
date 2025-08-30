@@ -12,6 +12,7 @@ BUILD_DIR = build
 # Source files
 SRCS = \
 	core/main.c \
+	$(wildcard src/drivers/*.c) \
     lib/STM32CubeL4/Drivers/CMSIS/Device/ST/STM32L4xx/Source/Templates/system_stm32l4xx.c
 
 # Startup assembly file
@@ -20,6 +21,8 @@ ASM_SRC = lib/STM32CubeL4/Drivers/CMSIS/Device/ST/STM32L4xx/Source/Templates/gcc
 # Include directories
 CMSIS_DEVICE_INC = lib/STM32CubeL4/Drivers/CMSIS/Device/ST/STM32L4xx/Include
 CMSIS_INC = lib/STM32CubeL4/Drivers/CMSIS/Include
+INCS = /home/mateusz/Documents/projekty_cv/bare-metal-iot-weather-node/firmware/inc
+
 
 # Linker script
 LINKER = lib/STM32CubeL4/Projects/NUCLEO-L476RG/Templates/STM32CubeIDE/STM32L476RGTX_FLASH.ld
@@ -28,7 +31,7 @@ LINKER = lib/STM32CubeL4/Projects/NUCLEO-L476RG/Templates/STM32CubeIDE/STM32L476
 MCU = cortex-m4
 MCU_MODEL = STM32L476xx
 THUMB = -mthumb                 # Use Thumb instruction set
-CFLAGS = -mcpu=$(MCU) $(THUMB) -Og -g -Wall -std=c99 -I$(CMSIS_DEVICE_INC) -I$(CMSIS_INC) -D$(MCU_MODEL)# Compiler flags: CPU, Thumb, debug, warnings, C99
+CFLAGS = -mcpu=$(MCU) $(THUMB) -Og -g -Wall -std=c99 -I$(CMSIS_DEVICE_INC) -I$(CMSIS_INC) -I$(INCS) -D$(MCU_MODEL)# Compiler flags: CPU, Thumb, debug, warnings, C99
 LDFLAGS = -T$(LINKER) -nostdlib -Wl,-Map=$(BUILD_DIR)/$(TARGET).map # Linker flags: script, no stdlib, map file
 
 # Generate list of object files in build directory

@@ -5,7 +5,7 @@ firmware/*.elf
 firmware/*.bin
 firmware/*.map
 firmware/*.lst
-
+firmware/*.vscode
 # Ignoruj całe katalogi buildowe
 firmware/build/
 firmware/debug/

@@ -10,7 +10,7 @@
 - [x] Zakup devboarda
 - [x] Przygotowanie szablonu struktury plikow
 - [x] Przygotowanie make
-- [ ] Przygotowanie basic CI
+- [x] Przygotowanie basic CI
 - [x] Testy toolchaina (potrzebny devboard)
 - [x] Sprawdzenie kompilacji testowego projektu
 
