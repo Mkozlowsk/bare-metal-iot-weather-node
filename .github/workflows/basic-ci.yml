@@ -2,7 +2,6 @@ name: Basic CI - Compilation Check
 
 on: [push, pull_request]
 
-
 jobs:
   build-firmware:
     name: Build Firmware
@@ -21,14 +20,14 @@ jobs:
     - name: Install & Cache ARM Toolchain
       uses: awalsh128/cache-apt-pkgs-action@latest
       with:
-        packages: gcc-arm-none-eabi
+        packages: gcc-arm-none-eabi binutils-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi
         version: 1.0
-
 
     - name: Verify toolchain
       run: |
         arm-none-eabi-gcc --version
-        which arm-none-eabi-gcc
+        arm-none-eabi-ld --version
+        find /usr -name "libc.a" 2>/dev/null | grep arm-none-eabi
 
     - name: Compile Project
       run: make all
