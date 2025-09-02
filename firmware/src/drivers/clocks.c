@@ -14,12 +14,10 @@
   *****************************************************************************/
 
 #include "clocks.h"
-
 /**
   * @brief         Inicjalizacja oscylatora MSI.
-  * @param msi_range Zakres częstotliwości MSI (patrz dokumentacja RCC_CSR_MSISRANGE_*)
-  * @param timeout    Timeout w cyklach pętli
-  * @retval        App_StatusTypeDef Status operacji
+  * @details       Funkcja konfiguruje zakres MSI, włącza oscylator i czeka na gotowość.
+  *                Wymagane jest wcześniejsze wyłączenie MSI jeśli był w użyciu.
   */
 App_StatusTypeDef RCC_MSI_Init(uint8_t msi_range, uint32_t timeout){
     if(msi_range > 0xF) return APP_INVALID_PARAM;
