@@ -29,9 +29,13 @@ App_StatusTypeDef RCC_MSI_Init(uint8_t msi_range, uint32_t timeout){
     RCC->CSR |= (msi_range << RCC_CSR_MSISRANGE_Pos);
     RCC->CR |= RCC_CR_MSION;
 
-    while((RCC->CR & RCC_CR_MSIRDY) != 1){
+    while(!(RCC->CR & RCC_CR_MSIRDY)){
         if(--timeout == 0) return APP_TIMEOUT;
     }
 
     return APP_OK;
+}
+
+App_StatusTypeDef RCC_HSE_Init(uint8_t msi_range, bool bypass, uint32_t timeout){
+  
 }

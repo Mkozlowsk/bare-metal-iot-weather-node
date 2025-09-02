@@ -51,7 +51,7 @@ App_StatusTypeDef RCC_MSI_Init(uint8_t msi_range, uint32_t timeout);
   * @param bypass    Tryb bypass (true/false)
   * @retval        App_StatusTypeDef Status operacji
   */
-App_StatusTypeDef RCC_HSE_Init(uint8_t hse_freq, bool bypass);
+App_StatusTypeDef RCC_HSE_Init(uint8_t hse_freq, bool bypass, uint32_t timeout);
 
 /**
   * @brief         Inicjalizacja PLL.
