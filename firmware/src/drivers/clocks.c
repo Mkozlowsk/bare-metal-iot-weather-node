@@ -37,5 +37,5 @@ App_StatusTypeDef RCC_MSI_Init(uint8_t msi_range, uint32_t timeout){
 }
 
 App_StatusTypeDef RCC_HSE_Init(uint8_t msi_range, bool bypass, uint32_t timeout){
-  
+  return APP_OK;
 }
