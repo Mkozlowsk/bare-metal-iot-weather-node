@@ -21,8 +21,8 @@ ASM_SRC = lib/STM32CubeL4/Drivers/CMSIS/Device/ST/STM32L4xx/Source/Templates/gcc
 # Include directories
 CMSIS_DEVICE_INC = lib/STM32CubeL4/Drivers/CMSIS/Device/ST/STM32L4xx/Include
 CMSIS_INC = lib/STM32CubeL4/Drivers/CMSIS/Include
-INCS = /inc
-DRIVERS_INC = /inc/drivers
+INCS = inc
+DRIVERS_INC = inc/drivers
 
 
 
