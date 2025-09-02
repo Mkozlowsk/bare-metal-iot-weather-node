@@ -29,10 +29,10 @@ bool MSI_IsReady(void);
 bool LSI_IsReady(void);
 
 // Configuration functions
-void SystemClock_MSI_Config(uint32_t msi_range);
-void SystemClock_HSE_Config(uint32_t hse_freq, bool bypass);
-void SystemClock_PLL_Config(uint32_t source, uint32_t m, uint32_t n, uint32_t p, uint32_t q);
-void SystemClock_SelectSource(ClockSource_t source);
+void RCC_MSI_Config(uint32_t msi_range);
+void RCC_HSE_Config(uint32_t hse_freq, bool bypass);
+void RCC_PLL_Config(uint32_t source, uint32_t m, uint32_t n, uint32_t p, uint32_t q);
+void RCC_SYSCLK_SelectSource(ClockSource_t source);
 
 // Utility functions
 uint32_t SystemClock_GetSYSCLKFreq(void);
