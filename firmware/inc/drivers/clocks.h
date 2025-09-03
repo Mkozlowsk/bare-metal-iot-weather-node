@@ -23,7 +23,7 @@
 /**
   * @brief  Źródła zegaru systemowego.
   */
-typedef enum {
+typedef enum __attribute__((packed)){
     CLOCK_SRC_MSI = 0, /**< Wewnętrzny oscylator multi-speed */
     CLOCK_SRC_HSE,     /**< Zewnętrzny oscylator wysokiej prędkości */
     CLOCK_SRC_PLL,     /**< Pętla fazowa (Phase-Locked Loop) */
@@ -40,29 +40,40 @@ bool LSI_IsReady(void);
 /**
   * @brief         Inicjalizacja oscylatora MSI.
   * @param msi_range Zakres częstotliwości MSI (patrz dokumentacja RCC_CSR_MSISRANGE_*)
-  * @param timeout    Timeout w cyklach pętli
+  * @param timeout    Timeout w cyklach pętli sysclk
   * @retval        App_StatusTypeDef Status operacji
   */
 App_StatusTypeDef RCC_MSI_Init(uint8_t msi_range, uint32_t timeout);
 
 /**
   * @brief         Inicjalizacja oscylatora HSE.
-  * @param hse_freq  Częstotliwość HSE w MHz
-  * @param bypass    Tryb bypass (true/false)
+  * @param bypass    Tryb bypass (true/false), czyli czy HSE ma byc bypassowane przez zewnetrzny zegar (false - HSE oscylator nie jest bypassowany)
+  * @param timeout    Timeout w cyklach pętli sysclk
   * @retval        App_StatusTypeDef Status operacji
   */
-App_StatusTypeDef RCC_HSE_Init(uint8_t hse_freq, bool bypass, uint32_t timeout);
+App_StatusTypeDef RCC_HSE_Init(bool bypass, uint32_t timeout);
+
+/**
+  * @brief  Źródla PLL.
+  */
+typedef enum __attribute__((packed)){
+    PLL_SRC_MSI = 0,
+    PLL_SRC_HSE,
+} PLLSource_t;
+
 
 /**
   * @brief         Inicjalizacja PLL.
-  * @param source   Źródło clocka dla PLL
+  * @param source   PLLSource_t - Źródło clocka dla PLL
   * @param m        Dzielnik M
   * @param n        Mnożnik N
   * @param p        Dzielnik P
   * @param q        Dzielnik Q
+  * @param r        Dzielnik R
+  * @param timeout    Timeout w cyklach pętli sysclk
   * @retval        App_StatusTypeDef Status operacji
   */
-App_StatusTypeDef RCC_PLL_Init(uint8_t source, uint8_t m, uint8_t n, uint8_t p, uint8_t q);
+App_StatusTypeDef RCC_PLL_Init(PLLSource_t source, uint8_t m, uint8_t n, uint8_t p, uint8_t q, uint8_t r, uint32_t timeout);
 
 /**
   * @brief         Wybór źródła clocka systemowego.
