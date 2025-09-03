@@ -17,17 +17,24 @@ jobs:
         submodules: 'recursive'
         fetch-depth: 1 
       
-    - name: Install & Cache ARM Toolchain
+    - name: Restore cached ARM toolchain
       uses: awalsh128/cache-apt-pkgs-action@latest
       with:
-        packages: gcc-arm-none-eabi binutils-arm-none-eabi libnewlib-arm-none-eabi make
+        packages: gcc-arm-none-eabi binutils-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib make
         version: 1.0
+
+    - name: Install ARM toolchain (if not cached)
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc-arm-none-eabi binutils-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib make
 
     - name: Verify toolchain
       run: |
         arm-none-eabi-gcc --version
         arm-none-eabi-ld --version
-        find /usr -name "libc.a" 2>/dev/null | grep arm-none-eabi
+        find /usr -name "libc.a" 2>/dev/null | head -5
+        # Sprawdź czy newlib jest dostępny
+        ls -la /usr/lib/arm-none-eabi/newlib/ || echo "Newlib not found"
 
     - name: Compile Project
       run: make all
