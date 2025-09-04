@@ -14,7 +14,7 @@
 - [x] Testy toolchaina (potrzebny devboard)
 - [x] Sprawdzenie kompilacji testowego projektu
 
-## Faza 1 Podstawowy software (TT: 3 tygodnie)
+## Faza 1 Podstawowy software (TT: 6 tygodni)
 - [ ] Przygotowywanie rozszerzonego CI (W trakcie pozostalych pkt)
 
 - [x] Konfiguracja HSE
@@ -36,7 +36,7 @@
 - [ ] Implementacja czujnikow i ich protokolow komunikacyjnych
 - [ ] Implementacja LoRa
 
-## Faza 2 Implementacja logiki aplikacji (TT: 3 tygodnie)
+## Faza 2 Implementacja logiki aplikacji (TT: 4 tygodnie)
 - [ ] Design protokolu i formatow danych
 - [ ] Maszyna stanow
 - [ ] Optymalizacja poboru mocy
