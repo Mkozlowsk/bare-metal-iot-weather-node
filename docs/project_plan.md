@@ -16,7 +16,21 @@
 
 ## Faza 1 Podstawowy software (TT: 3 tygodnie)
 - [ ] Przygotowywanie rozszerzonego CI (W trakcie pozostalych pkt)
-- [ ] Konfiguracja HSI/PLL
+
+- [x] Konfiguracja HSE
+- [x] Konfiguracja MSI
+- [x] Konfiguracja PLL
+- [ ] Konfiguracja LSI
+- [x] Konfiguracja SysCLK
+- [ ] Deinicjalizacje funkcji
+- [ ] System zabezpieczen zegarow CSE
+- [ ] Obsluga LL bledow i ich logowanie
+- [ ] Zaawansowane zarzadzanie energia, skalowanie napiecia od czestotliwosci, tryby niskopradowe.
+- [ ] Funkcje diagnostyczne zegarow
+- [ ] Preskalery busow AHB, APB
+- [ ] dependency graph zegarow? reference counter?
+- [ ] Testy zegarow
+
 - [ ] Implementacja GPIO
 - [ ] Implementacja UART z przerwaniami do debugowania
 - [ ] Implementacja czujnikow i ich protokolow komunikacyjnych
