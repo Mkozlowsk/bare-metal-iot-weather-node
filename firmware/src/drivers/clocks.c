@@ -124,12 +124,12 @@ static uint32_t RCC_PLLCLK_GetFrequency(void)
     uint32_t pllsrc = RCC->PLLCFGR & RCC_PLLCFGR_PLLSRC;
     
     uint32_t input_freq;
-    if(pllsrc == RCC_PLLCFGR_PLLSRC_MSI) input_freq = RCC_MSI_GetFreq();
-    if(pllsrc == RCC_PLLCFGR_PLLSRC_HSE) input_freq = HSE_FREQ; else return 0;
+    if(pllsrc == RCC_PLLCFGR_PLLSRC_MSI) {input_freq = RCC_MSI_GetFreq();
+    }else if(pllsrc == RCC_PLLCFGR_PLLSRC_HSE) input_freq = HSE_FREQ; else return 0;
     
-    uint32_t m = RCC->PLLCFGR & RCC_PLLCFGR_PLLM;
-    uint32_t n = RCC->PLLCFGR & RCC_PLLCFGR_PLLN;
-    uint32_t r = RCC->PLLCFGR & RCC_PLLCFGR_PLLR;
+    uint32_t m = (RCC->PLLCFGR & RCC_PLLCFGR_PLLM)>>RCC_PLLCFGR_PLLM_Pos;
+    uint32_t n = (RCC->PLLCFGR & RCC_PLLCFGR_PLLN)>>RCC_PLLCFGR_PLLN_Pos;
+    uint32_t r = (RCC->PLLCFGR & RCC_PLLCFGR_PLLR)>>RCC_PLLCFGR_PLLR_Pos;
     
     uint32_t r_value;
     switch(r) {
@@ -242,7 +242,6 @@ App_StatusTypeDef RCC_SYSCLK_SelectSource(ClockSource_t source, uint32_t timeout
         case CLOCK_SRC_OTHER: return APP_INVALID_PARAM;
     }
     
-    // Oczekwianie na potwierdzenie przełączenia przez hardware
     uint32_t sws_mask;
     switch(source) {
         case CLOCK_SRC_HSE: sws_mask = RCC_CFGR_SWS_HSE; break;
@@ -254,12 +253,88 @@ App_StatusTypeDef RCC_SYSCLK_SelectSource(ClockSource_t source, uint32_t timeout
     
     while((RCC->CFGR & RCC_CFGR_SWS) != sws_mask) {
         if(--timeout == 0) {
-            return APP_TIMEOUT; // Przełączenie nie powiodło się
+            return APP_TIMEOUT;
         }
     }
     
     return APP_OK;
 }
+
+
+/**
+  * @brief         Inicjalizacja LSI.
+  */
+  App_StatusTypeDef RCC_LSI_Init(uint32_t timeout){
+  RCC->CR |= RCC_CSR_LSION;
+  while((RCC->CSR & RCC_CSR_LSIRDY) == 0){
+    if(--timeout == 0) return APP_TIMEOUT;
+  }
+
+  return APP_OK;
+}
+/**
+  * @brief         Inicjalizacja LSE.
+  * @note          Po wlaczeniu LSE mozna jedynie zmniejszyc drive
+  */
+App_StatusTypeDef RCC_LSE_Init(bool bypass, LSE_XTAL_Drive_t drive, uint32_t timeout){
+  uint32_t timeout_disable = timeout;
+  uint32_t timeout_enable = timeout;
+
+  RCC->BDCR &= ~RCC_BDCR_LSEON;
+  while((RCC->BDCR & RCC_BDCR_LSEON)==0){
+    if(--timeout_disable == 0) return APP_TIMEOUT;
+  }
+  
+  uint8_t drive_val = 0x0;
+  switch (drive)
+  {
+  case LSE_DRIVE_LOW: drive_val = 0x0;break;
+  case LSE_DRIVE_MEDIUM_LOW: drive_val = 0x1;break;
+  case LSE_DRIVE_MEDIUM_HIGH: drive_val = 0x2;break;
+  case LSE_DRIVE_HIGH: drive_val = 0x3;break;
+  }
+
+  RCC->BDCR &= ~RCC_BDCR_LSEDRV;
+  RCC->BDCR |= (drive_val<<RCC_BDCR_LSEDRV_Pos); 
+  
+  RCC->BDCR |= RCC_BDCR_LSEON;
+  while((RCC->BDCR & RCC_BDCR_LSEON)!=0){
+    if(--timeout_enable == 0) return APP_TIMEOUT;
+  }
+
+  return APP_OK;
+}
+
+/**
+  * @brief         Inicjalizacja LSE.
+  */
+App_StatusTypeDef RCC_LSE_ChangeDrive(LSE_XTAL_Drive_t drive, uint32_t timeout){
+  LSE_XTAL_Drive_t drive_current = RCC_LSE_GetDrive();
+
+  if(drive == drive_current) return APP_OK;
+  RCC->BDCR &= ~RCC_BDCR_LSEDRV;
+  if(drive < drive_current) {
+    RCC->BDCR |= (drive << RCC_BDCR_LSEDRV_Pos);
+  }
+  if(drive > drive_current) {
+    uint32_t timeout_disable = timeout;
+    uint32_t timeout_enable = timeout;
+
+    RCC->BDCR &= ~RCC_BDCR_LSEON;
+    while((RCC->BDCR & RCC_BDCR_LSEON)==0){
+      if(--timeout_disable == 0) return APP_TIMEOUT;
+    }
+    
+    RCC->BDCR |= (drive << RCC_BDCR_LSEDRV_Pos);
+
+    RCC->BDCR |= RCC_BDCR_LSEON;
+    while((RCC->BDCR & RCC_BDCR_LSEON)!=0){
+      if(--timeout_enable == 0) return APP_TIMEOUT;
+    } 
+  }
+  return APP_OK;
+}
+
 
 /* Funkcje diagnostyczne */
 
@@ -294,4 +369,20 @@ uint32_t SystemClock_GetSYSCLKFreq(void){
   case CLOCK_SRC_OTHER: return 0;
   default:  return 0;
   }
+}
+
+/**
+  * @brief         Pobiera aktualną wartosc drive LSE
+  */
+LSE_XTAL_Drive_t RCC_LSE_GetDrive(void){
+  uint8_t drive_val = (RCC->BDCR & RCC_BDCR_LSEDRV) >> RCC_BDCR_LSEDRV_Pos ;
+  switch (drive_val)
+  {
+  case 0x0: return LSE_DRIVE_LOW;
+  case 0x1: return LSE_DRIVE_MEDIUM_LOW;
+  case 0x2: return LSE_DRIVE_MEDIUM_HIGH;
+  case 0x3: return LSE_DRIVE_HIGH;
+  default: return LSE_DRIVE_LOW; //Zeby kompilator nie zwracal warninga
+  }
+  return LSE_DRIVE_LOW; //Zeby kompilator nie zwracal warninga
 }

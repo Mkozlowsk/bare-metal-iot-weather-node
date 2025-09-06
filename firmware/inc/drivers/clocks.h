@@ -90,6 +90,41 @@ App_StatusTypeDef RCC_PLLCLK_Init(PLLSource_t source, uint8_t m, uint8_t n, uint
   */
 App_StatusTypeDef RCC_SYSCLK_SelectSource(ClockSource_t source, uint32_t timeout);
 
+/**
+  * @brief         Inicjalizacja LSI.
+  * @param timeout Timeout w cyklach pętli
+  * @retval        App_StatusTypeDef Status operacji
+  */
+App_StatusTypeDef RCC_LSI_Init(uint32_t timeout);
+
+/**
+  * @brief        Typy drive XTAL dla LSE
+  */
+typedef enum __attribute__((packed)){
+  LSE_DRIVE_LOW,
+  LSE_DRIVE_MEDIUM_LOW,
+  LSE_DRIVE_MEDIUM_HIGH,
+  LSE_DRIVE_HIGH,
+}LSE_XTAL_Drive_t;
+
+
+/**
+  * @brief         Inicjalizacja LSE.
+  * @param bypass    Tryb bypass (true/false), czyli czy LSE ma byc bypassowane przez zewnetrzny zegar (false - LSE oscylator nie jest bypassowany)
+  * @param drive   LSE_XTAL_Drive_t drive capability
+  * @param timeout Timeout w cyklach pętli
+  * @retval        App_StatusTypeDef Status operacji
+  */
+App_StatusTypeDef RCC_LSE_Init(bool bypass, LSE_XTAL_Drive_t drive, uint32_t timeout);
+
+/**
+  * @brief         Inicjalizacja LSE.
+  * @param drive   LSE_XTAL_Drive_t drive capability
+  * @param timeout Timeout w cyklach pętli
+  * @retval        App_StatusTypeDef Status operacji
+  */
+App_StatusTypeDef RCC_LSE_ChangeDrive(LSE_XTAL_Drive_t drive, uint32_t timeout);
+
 /* Funkcje diagnostyczne */
 
 /**
@@ -129,5 +164,11 @@ uint32_t SystemClock_GetSYSCLKFreq(void);
   * @brief         Wyświetla aktualną konfigurację clocków (przez UART).
   */
 void SystemClock_PrintConfig(void);
+
+/**
+  * @brief         Zwraca obecne ustawienie drive LSE
+  * @retval        LSE_XTAL_Drive_t stan drive LSE
+  */
+LSE_XTAL_Drive_t RCC_LSE_GetDrive(void);
 
 #endif // CLOCKS_H

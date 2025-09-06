@@ -20,7 +20,11 @@
 - [x] Konfiguracja HSE
 - [x] Konfiguracja MSI
 - [x] Konfiguracja PLL
-- [ ] Konfiguracja LSI
+- [x] Konfiguracja LSI
+- [ ] Konfiguracje LSE
+- [ ] Konfiguracja RTC
+- [ ] Konfiguracja VCO
+- [ ] Kalibracja zegarow
 - [x] Konfiguracja SysCLK
 - [ ] Deinicjalizacje funkcji
 - [ ] System zabezpieczen zegarow CSE
@@ -30,7 +34,6 @@
 - [ ] Preskalery busow AHB, APB
 - [ ] dependency graph zegarow? reference counter?
 - [ ] Testy zegarow
-
 - [ ] Implementacja GPIO
 - [ ] Implementacja UART z przerwaniami do debugowania
 - [ ] Implementacja czujnikow i ich protokolow komunikacyjnych
