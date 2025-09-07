@@ -22,7 +22,8 @@ typedef enum {
     APP_BUSY     = 0x03U, /**<  Peryferium jest zajete */
     APP_INVALID_PARAM = 0x04U, /**< Zly parametr */
     APP_NOT_READY = 0x05U, /**< Peryferium nie jest gotowe */
-    APP_CLOCK_ERROR = 0x06U /**< Blad konfiguracji zegara */
+    APP_CLOCK_ERROR = 0x06U, /**< Blad konfiguracji zegara */
+    APP_ALREADY_ACQUIRED = 0x07U
 } App_StatusTypeDef;
 
 #endif // APP_STATUS_H

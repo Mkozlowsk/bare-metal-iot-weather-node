@@ -32,11 +32,6 @@ typedef enum __attribute__((packed)){
     CLOCK_SRC_OTHER,
 } ClockSource_t;
 
-/* Funkcje sprawdzające status */
-bool HSE_IsReady(void);
-bool PLL_IsReady(void);
-bool MSI_IsReady(void);
-bool LSI_IsReady(void);
 
 /* Funkcje inicjalizacji */
 /**
