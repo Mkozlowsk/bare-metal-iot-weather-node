@@ -334,8 +334,54 @@ App_StatusTypeDef RCC_LSE_ChangeDrive(LSE_XTAL_Drive_t drive, uint32_t timeout){
   }
   return APP_OK;
 }
+/**
+ *  @brief    Inicjalizacja RTC
+ *  @note     System musi byc zawsze skonfigurowany aby osiagnac czestotliwosc PCLK wieksza lub rowna RTCCLK
+ *  @note     Po ustawieniu zrodla mozna je zmienic tylko po zresetowaniu backup domain bitem BDRST
+ *  @note     Po resecie bity BDRC sa chronione przed zmianami po resecie, aby je modyfikowac nalezy:
+ *            1. Wlaczyc APB1 przez ustawienie bitow PWREN w RCC_APB1ENR1
+ *            2. ustwawic bit DBP w PWR_CR1
+ *            3. Ustawic zrodlo RTC i wlaczyc RTC
+ *  @note     4. Po wlaczeniu APB1 nalezy odczekac 2 cykle zegara
+ */
 
+App_StatusTypeDef RCC_RTC_Init(RTC_Source_t source){
+  
+  RCC->APB1ENR1 |= RCC_APB1ENR1_PWREN;
+  uint8_t delay = 3;
+  
+  __NOP();
+  __NOP();
 
+  PWR->CR1 |= PWR_CR1_DBP;
+
+  RCC->BDCR &= ~RCC_BDCR_RTCEN;
+
+  uint8_t source_val = 0;
+  switch (source) {
+  case RTC_SOURCE_LSE:
+    if(!(RCC->BDCR & RCC_BDCR_LSERDY)) return APP_NOT_READY;
+    source_val = 0x1 << RCC_BDCR_RTCSEL_Pos;
+    break;
+  case RTC_SOURCE_LSI:
+    if(!(RCC->CSR & RCC_CSR_LSIRDY)) return APP_NOT_READY;
+    source_val = 0x2 << RCC_BDCR_RTCSEL_Pos;
+    break;
+  case RTC_SOURCE_HSE:
+    if(!(RCC->CR & RCC_CR_HSERDY)) return APP_NOT_READY;
+    source_val = 0x3 << RCC_BDCR_RTCSEL_Pos;
+    break;
+  default:
+    PWR->CR1 &= ~PWR_CR1_DBP;
+    return APP_INVALID_PARAM;
+}
+  
+  RCC->BDCR &= ~RCC_BDCR_RTCSEL;
+  RCC->BDCR |= source_val;
+  RCC->BDCR |= RCC_BDCR_RTCEN;
+  PWR->CR1 &= ~PWR_CR1_DBP;
+  return APP_OK;
+}
 /* Funkcje diagnostyczne */
 
 
@@ -358,7 +404,7 @@ ClockSource_t SystemClock_GetSource(void){
   * @brief         Pobiera aktualną częstotliwość clocka systemowego.
   */
 uint32_t SystemClock_GetSYSCLKFreq(void){
-
+  
   ClockSource_t clock_src = SystemClock_GetSource();
 
   switch (clock_src)

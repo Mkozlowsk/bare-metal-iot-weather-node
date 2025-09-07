@@ -21,8 +21,9 @@
 - [x] Konfiguracja MSI
 - [x] Konfiguracja PLL
 - [x] Konfiguracja LSI
-- [ ] Konfiguracje LSE
+- [x] Konfiguracje LSE
 - [ ] Konfiguracja RTC
+- [ ] Dependency bitmap zegarow 
 - [ ] Konfiguracja VCO
 - [ ] Kalibracja zegarow
 - [x] Konfiguracja SysCLK
@@ -32,7 +33,6 @@
 - [ ] Zaawansowane zarzadzanie energia, skalowanie napiecia od czestotliwosci, tryby niskopradowe.
 - [ ] Funkcje diagnostyczne zegarow
 - [ ] Preskalery busow AHB, APB
-- [ ] dependency graph zegarow? reference counter?
 - [ ] Testy zegarow
 - [ ] Implementacja GPIO
 - [ ] Implementacja UART z przerwaniami do debugowania
