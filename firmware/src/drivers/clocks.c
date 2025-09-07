@@ -348,7 +348,6 @@ App_StatusTypeDef RCC_LSE_ChangeDrive(LSE_XTAL_Drive_t drive, uint32_t timeout){
 App_StatusTypeDef RCC_RTC_Init(RTC_Source_t source){
   
   RCC->APB1ENR1 |= RCC_APB1ENR1_PWREN;
-  uint8_t delay = 3;
   
   __NOP();
   __NOP();
@@ -357,7 +356,7 @@ App_StatusTypeDef RCC_RTC_Init(RTC_Source_t source){
 
   RCC->BDCR &= ~RCC_BDCR_RTCEN;
 
-  uint8_t source_val = 0;
+  uint16_t source_val = 0;
   switch (source) {
   case RTC_SOURCE_LSE:
     if(!(RCC->BDCR & RCC_BDCR_LSERDY)) return APP_NOT_READY;

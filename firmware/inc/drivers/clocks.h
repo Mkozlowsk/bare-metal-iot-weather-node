@@ -118,12 +118,30 @@ typedef enum __attribute__((packed)){
 App_StatusTypeDef RCC_LSE_Init(bool bypass, LSE_XTAL_Drive_t drive, uint32_t timeout);
 
 /**
-  * @brief         Inicjalizacja LSE.
+  * @brief         Zmiana drive LSE.
   * @param drive   LSE_XTAL_Drive_t drive capability
   * @param timeout Timeout w cyklach pętli
   * @retval        App_StatusTypeDef Status operacji
   */
 App_StatusTypeDef RCC_LSE_ChangeDrive(LSE_XTAL_Drive_t drive, uint32_t timeout);
+
+/**
+ * @brief Zrodla RTC
+ */
+typedef enum __attribute__((packed)){
+  RTC_SOURCE_LSE,
+  RTC_SOURCE_LSI,
+  RTC_SOURCE_HSE,
+}RTC_Source_t;
+
+/**
+  * @brief         Inicjalizacja RTC.
+  * @param source  RTC_Source_t zrodlo RTC
+  * @param timeout Timeout w cyklach pętli
+  * @retval        App_StatusTypeDef Status operacji
+  */
+App_StatusTypeDef RCC_RTC_Init(RTC_Source_t source);
+
 
 /* Funkcje diagnostyczne */
 
