@@ -70,7 +70,7 @@ typedef union {
  * @param           target Cel akwizycji
  * @retval          App_StatusTypeDef status aplikacji
  */
-App_StatusTypeDef CLK_Acquire(AcquireType_t type, AcquireTarget_t target);
+App_StatusTypeDef CLK_Acquire(AcquireType_t type, AcquireTarget_t target, uint32_t timeout);
 
 /**
  * @brief           Uniwersalna funkcja zwalniania zasobów clocka
@@ -78,7 +78,7 @@ App_StatusTypeDef CLK_Acquire(AcquireType_t type, AcquireTarget_t target);
  * @param           target Cel zwolnienia
  * @retval          App_StatusTypeDef status aplikacji
  */
-App_StatusTypeDef CLK_Release(AcquireType_t type, AcquireTarget_t target);
+App_StatusTypeDef CLK_Release(AcquireType_t type, AcquireTarget_t target, uint32_t timeout);
 
 /**
  * @brief           Funkcja zwracajaca bitmape uzycia clocka
@@ -107,28 +107,28 @@ uint32_t CLK_GetBusBitmap(BusId_t bus);
 void CLK_BitmapInit(void);
 
 // Makra dla wygody użytkowania
-#define CLK_ACQUIRE_CLOCK(clock) \
-    CLK_Acquire(ACQUIRE_TYPE_CLOCK, (AcquireTarget_t){.clock = (clock)})
+#define CLK_ACQUIRE_CLOCK(clock, timeout) \
+    CLK_Acquire(ACQUIRE_TYPE_CLOCK, (AcquireTarget_t){.clock = (clock)}, (uint32_t)(timeout))
 
-#define CLK_ACQUIRE_PERIPH(periph) \
-    CLK_Acquire(ACQUIRE_TYPE_PERIPH, (AcquireTarget_t){.periph = (periph)})
+#define CLK_ACQUIRE_PERIPH(periph, timeout) \
+    CLK_Acquire(ACQUIRE_TYPE_PERIPH, (AcquireTarget_t){.periph = (periph)}, (uint32_t)(timeout))
 
-#define CLK_ACQUIRE_BUS(bus) \
-    CLK_Acquire(ACQUIRE_TYPE_BUS, (AcquireTarget_t){.bus = (bus)})
+#define CLK_ACQUIRE_BUS(bus, timeout) \
+    CLK_Acquire(ACQUIRE_TYPE_BUS, (AcquireTarget_t){.bus = (bus)}, (uint32_t)(timeout))
 
-#define CLK_ACQUIRE_RAW(reg, mask) \
-    CLK_Acquire(ACQUIRE_TYPE_RAW, (AcquireTarget_t){.raw = {(reg), (mask)}})
+#define CLK_ACQUIRE_RAW(reg, mask, timeout) \
+    CLK_Acquire(ACQUIRE_TYPE_RAW, (AcquireTarget_t){.raw = {(reg), (mask)}}, (uint32_t)(timeout))
 
-#define CLK_RELEASE_CLOCK(clock) \
-    CLK_Release(ACQUIRE_TYPE_CLOCK, (AcquireTarget_t){.clock = (clock)})
+#define CLK_RELEASE_CLOCK(clock, timeout) \
+    CLK_Release(ACQUIRE_TYPE_CLOCK, (AcquireTarget_t){.clock = (clock)}, (uint32_t)(timeout))
 
-#define CLK_RELEASE_PERIPH(periph) \
-    CLK_Release(ACQUIRE_TYPE_PERIPH, (AcquireTarget_t){.periph = (periph)})
+#define CLK_RELEASE_PERIPH(periph, timeout) \
+    CLK_Release(ACQUIRE_TYPE_PERIPH, (AcquireTarget_t){.periph = (periph)}, (uint32_t)(timeout))
 
-#define CLK_RELEASE_BUS(bus) \
-    CLK_Release(ACQUIRE_TYPE_BUS, (AcquireTarget_t){.bus = (bus)})
+#define CLK_RELEASE_BUS(bus, timeout) \
+    CLK_Release(ACQUIRE_TYPE_BUS, (AcquireTarget_t){.bus = (bus)}, (uint32_t)(timeout))
 
-#define CLK_RELEASE_RAW(reg, mask) \
-    CLK_Release(ACQUIRE_TYPE_RAW, (AcquireTarget_t){.raw = {(reg), (mask)}})
+#define CLK_RELEASE_RAW(reg, mask, timeout) \
+    CLK_Release(ACQUIRE_TYPE_RAW, (AcquireTarget_t){.raw = {(reg), (mask)}}, (uint32_t)(timeout))
 
 #endif // CLOCKS_BITMAP_H
