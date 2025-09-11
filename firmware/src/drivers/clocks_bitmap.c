@@ -4,10 +4,8 @@
   *
   * @details       Plik zawiera definicje funkcji odpowiedzialnych za dynamiczne
   *                przelaczanie zrodel zegara (MSI, HSE, PLL). Zawiera takze
-  *                implementacje mechanizmu bitmapy do sledzenia peryferiow
-  *                korzystajacych z poszczegolnych zegarow. Mechanizm ten zapewnia
-  *                bezpieczne wylaczanie zegarow tylko wtedy, gdy nie sa one juz
-  *                potrzebne.
+  *                implementacje mechanizmu sledzenia zaleznosci uzycia peryferiow,
+  *                zegarow i busow.
   *
   * @author        Mateusz Kozlowski
   * @date          08.09.2025
@@ -30,58 +28,69 @@ void CLK_BitmapInit(void) {
 }
 
 // Funkcje wewnętrzne
-static App_StatusTypeDef CLK_Acquire_Clock(ClockId_t clk, uint32_t timeout) {
-    // sprawdz czy juz acquired do !implementacji!
+static App_StatusTypeDef CLK_Acquire_Clock(ClockId_t clk) {
     if (clk >= CLOCK_COUNT) return APP_INVALID_PARAM;
-    
-    uint32_t before = clock_usage[clk];
-    clock_usage[clk] |= (1u << clk);
+    // Jesli zegar juz dziala funkcja przerywa swoje dzialanie. zapobiega to podwojnej inkrementacji licznika zaleznosci przez
+    // podwojne wywolanie funkcji inicjujacej 
+    if (clock_usage[clk]!= 0) return APP_ALREADY_ACQUIRED;
 
-    if (before == 0) {
+    if (clock_usage[clk] == 0) { 
         switch (clk) {
-            case CLOCK_MSI:
-                RCC->CR |= RCC_CR_MSION;
-                while((RCC->CR & RCC_CR_MSIRDY)==0){ //czekanie na gotowosc zegara
-                    if(--timeout == 0) return APP_TIMEOUT;
+            case CLOCK_PLL:
+                PLL_Source_t source_pll = RCC_PLLCLK_GetSource();
+                switch (source_pll)
+                {
+                case PLL_SRC_HSE:
+                    if(clock_usage[CLOCK_HSE] == 0) return APP_DEPENDENT_CLOCK_NOT_CONFIGURED;
+                    else clock_usage[CLOCK_HSE]++;
+                    break;
+                case PLL_SRC_MSI:
+                    if(clock_usage[CLOCK_MSI] == 0) return APP_DEPENDENT_CLOCK_NOT_CONFIGURED;
+                    else clock_usage[CLOCK_MSI]++;
+                    break;
+                case PLL_SRC_OTHER: return APP_INVALID_PARAM;
                 }
                 break;
-            case CLOCK_HSE:
-                RCC->CR |= RCC_CR_HSEON;
-                while((RCC->CR & RCC_CR_HSERDY)==0){
-                    if(--timeout == 0) return APP_TIMEOUT;
+            case CLOCK_SYS:
+                SYSCLK_Source_t source_sysclk = SYSCLK_GetSource();
+                switch (source_sysclk)
+                {
+                case SYSCLK_SRC_HSE:
+                    if(clock_usage[CLOCK_HSE] == 0) return APP_DEPENDENT_CLOCK_NOT_CONFIGURED;
+                    else clock_usage[CLOCK_HSE]++;
+                    break;
+                case SYSCLK_SRC_MSI:
+                    if(clock_usage[CLOCK_MSI] == 0) return APP_DEPENDENT_CLOCK_NOT_CONFIGURED;
+                    else clock_usage[CLOCK_MSI]++;
+                    break;
+                case SYSCLK_SRC_PLL:
+                    if(clock_usage[CLOCK_PLL] == 0) return APP_DEPENDENT_CLOCK_NOT_CONFIGURED;
+                    else clock_usage[CLOCK_PLL]++;
+                    break;
+                case SYSCLK_SRC_OTHER: return APP_INVALID_PARAM;
                 }
-                break;
-            case CLOCK_LSI:
-                RCC->CSR |= RCC_CSR_LSION;
-                while((RCC->CSR & RCC_CSR_LSIRDY)==0){
-                    if(--timeout == 0) return APP_TIMEOUT;
-                }
-                break;
-            case CLOCK_LSE:
-                RCC->BDCR |= RCC_BDCR_LSEON;
-                while((RCC->BDCR & RCC_BDCR_LSERDY) ==0){
-                    if(--timeout == 0) return APP_TIMEOUT;
-                }
-                break;
+            break;
             default: break;
         }
+        clock_usage[clk]++; //zwieksz licznik dependency dla danego zegara
     }
+
     return APP_OK;
 }
 
-static App_StatusTypeDef CLK_Acquire_Periph(PeripheralId_t periph, uint32_t timeout) {
+static App_StatusTypeDef CLK_Acquire_Periph(PeripheralId_t periph) {
     // sprawdz czy juz acquired do implementacji
     
     if (periph >= PERIPH_COUNT) return APP_INVALID_PARAM;
     
-    uint32_t before = peripheral_usage[periph];
-    peripheral_usage[periph] |= (1u << periph);
 
-    if (before == 0); // do implementacji
+    if (peripheral_usage[periph] == 0); // do implementacji
+    
+    peripheral_usage[periph] |= (1u << periph);
     return APP_OK;
 }
 
-static App_StatusTypeDef CLK_Acquire_Bus(BusId_t bus, uint32_t timeout) {
+static App_StatusTypeDef CLK_Acquire_Bus(BusId_t bus) {
     // sprawdz czy juz acquired do implementacji
     if (bus >= BUS_COUNT) return APP_INVALID_PARAM;
     
@@ -101,10 +110,9 @@ static App_StatusTypeDef CLK_Acquire_Bus(BusId_t bus, uint32_t timeout) {
     return APP_OK;
 }
 
-static App_StatusTypeDef CLK_Acquire_Raw(volatile uint32_t *reg, uint32_t mask, uint32_t timeout) {
+static App_StatusTypeDef CLK_Acquire_Raw(volatile uint32_t *reg, uint32_t mask) {
     // sprawdz czy juz acquired do implementacji
     
-    uint32_t before = *reg & mask;
     *reg |= mask;
     return APP_OK;
 }
@@ -160,7 +168,7 @@ static App_StatusTypeDef CLK_Release_Bus(BusId_t bus, uint32_t timeout) {
     bus_usage[bus] &= ~(1u << bus);
     if (bus_usage[bus] == 0) {
         switch (bus) {
-            case BUS_APB1: RCC->APB1ENR1 &= ~RCC_APB1ENR1_PWREN; break;
+            case BUS_APB1: RCC->APB1ENR1 &= ~RCC_APB1ENR1_PWREN; break; //do sprawdzenia czaas na wylaczenie
             default: break;
         }
     }
@@ -173,12 +181,12 @@ static App_StatusTypeDef CLK_Release_Raw(volatile uint32_t *reg, uint32_t mask, 
 }
 
 // Funkcje publiczne
-App_StatusTypeDef CLK_Acquire(AcquireType_t type, AcquireTarget_t target, uint32_t timeout) {
+App_StatusTypeDef CLK_Acquire(AcquireType_t type, AcquireTarget_t target) {
     switch (type) {
-        case ACQUIRE_TYPE_CLOCK: return CLK_Acquire_Clock(target.clock, timeout);
-        case ACQUIRE_TYPE_PERIPH: return CLK_Acquire_Periph(target.periph, timeout);
-        case ACQUIRE_TYPE_BUS: return CLK_Acquire_Bus(target.bus, timeout);
-        case ACQUIRE_TYPE_RAW: return CLK_Acquire_Raw(target.raw.reg, target.raw.mask, timeout);
+        case ACQUIRE_TYPE_CLOCK: return CLK_Acquire_Clock(target.clock);
+        case ACQUIRE_TYPE_PERIPH: return CLK_Acquire_Periph(target.periph);
+        case ACQUIRE_TYPE_BUS: return CLK_Acquire_Bus(target.bus);
+        case ACQUIRE_TYPE_RAW: return CLK_Acquire_Raw(target.raw.reg, target.raw.mask);
         default: return APP_INVALID_PARAM;
     }
 }

@@ -105,45 +105,6 @@ App_StatusTypeDef RCC_HSE_Init(bool bypass, uint32_t timeout){
 }
 
 /**
-  * @brief         Sprawdzenie czy czestotliwosc wyjsciowa PLL nie przekracza zakresu
-  * @note          czestotliwosc wyjsciowa w Hz f(VCO) PLL jest ustawiana wedlug:
-  *                f(VCO clock) = f(PLL clock input) × (PLLN / PLLM)
-  *                f(PLL_R) = f(VCO clock) / PLLR
-  */
-uint32_t RCC_PLLCLK_CalculateFrequency(uint32_t freq, uint8_t m, uint8_t n, uint8_t r){
-  uint32_t frequency = (uint32_t)freq * (uint32_t)n / (uint32_t)m;
-  frequency /= r;
-  return frequency;
-}
-
-/**
-  * @brief         Oblicza aktualną częstotliwość PLL na podstawie rejestrów.
-  */
-static uint32_t RCC_PLLCLK_GetFrequency(void)
-{
-    uint32_t pllsrc = RCC->PLLCFGR & RCC_PLLCFGR_PLLSRC;
-    
-    uint32_t input_freq;
-    if(pllsrc == RCC_PLLCFGR_PLLSRC_MSI) {input_freq = RCC_MSI_GetFreq();
-    }else if(pllsrc == RCC_PLLCFGR_PLLSRC_HSE) input_freq = HSE_FREQ; else return 0;
-    
-    uint32_t m = (RCC->PLLCFGR & RCC_PLLCFGR_PLLM)>>RCC_PLLCFGR_PLLM_Pos;
-    uint32_t n = (RCC->PLLCFGR & RCC_PLLCFGR_PLLN)>>RCC_PLLCFGR_PLLN_Pos;
-    uint32_t r = (RCC->PLLCFGR & RCC_PLLCFGR_PLLR)>>RCC_PLLCFGR_PLLR_Pos;
-    
-    uint32_t r_value;
-    switch(r) {
-        case 0: r_value = 2; break;
-        case 1: r_value = 4; break;
-        case 2: r_value = 6; break;
-        case 3: r_value = 8; break;
-        default: r_value = 2;
-    }
-    
-    return (input_freq * n / m /r_value);
-}
-
-/**
   * @brief         Inicjalizacja PLL.
   * @details       Funkcja konfiguruje zrodlo PLL i okresla wyjsciowa czestotliwosc za pomoca mnoznikow i dzielnikow
   * @note          Na rzecz potrzeb aplikacji uzywane jest tylko jedno wyjscie PLL
@@ -151,7 +112,7 @@ static uint32_t RCC_PLLCLK_GetFrequency(void)
   * @note          PLL musi być wyłączony podczas konfiguracji, natomiast bit ENABLE moze byc zmieniany w dowolnym momencie.
   * @note          !wymagana jest zmiana #define HSE_FREQ na podstawie uzywanego hardware!
   */
-App_StatusTypeDef RCC_PLLCLK_Init(PLLSource_t source, uint8_t m, uint8_t n, uint8_t r, uint32_t timeout){
+App_StatusTypeDef RCC_PLLCLK_Init(PLL_Source_t source, uint8_t m, uint8_t n, uint8_t r, uint32_t timeout){
   
   
   // Kontrola niewlasciwych parametrow
@@ -210,44 +171,44 @@ App_StatusTypeDef RCC_PLLCLK_Init(PLLSource_t source, uint8_t m, uint8_t n, uint
   * @note          Funkcja czeka na gotowość źródła przed przełączeniem i na
   *                potwierdzenie przełączenia przez hardware.
   */
-App_StatusTypeDef RCC_SYSCLK_SelectSource(ClockSource_t source, uint32_t timeout)
+App_StatusTypeDef RCC_SYSCLK_SelectSource(SYSCLK_Source_t source, uint32_t timeout)
 {
     // Sprawdzenie czy zrodlo jest gotowe
     switch(source) {
-        case CLOCK_SRC_MSI:
+        case SYSCLK_SRC_MSI:
             if(!(RCC->CR & RCC_CR_MSIRDY)) return APP_NOT_READY;
             break;
-        case CLOCK_SRC_HSE:
+        case SYSCLK_SRC_HSE:
             if(!(RCC->CR & RCC_CR_HSERDY)) return APP_NOT_READY;
             break;
-        case CLOCK_SRC_PLL:
+        case SYSCLK_SRC_PLL:
             if(!(RCC->CR & RCC_CR_PLLRDY)) return APP_NOT_READY;
             break;
-        case CLOCK_SRC_OTHER: return APP_INVALID_PARAM;
+        case SYSCLK_SRC_OTHER: return APP_INVALID_PARAM;
         default:
             return APP_INVALID_PARAM;
     }
     
     RCC->CFGR &= ~RCC_CFGR_SW;
     switch(source) {
-        case CLOCK_SRC_HSE:
+        case SYSCLK_SRC_HSE:
             RCC->CFGR |= RCC_CFGR_SW_HSE;
             break;
-        case CLOCK_SRC_MSI:
+        case SYSCLK_SRC_MSI:
             RCC->CFGR |= RCC_CFGR_SW_MSI;
             break;
-        case CLOCK_SRC_PLL:  
+        case SYSCLK_SRC_PLL:  
             RCC->CFGR |= RCC_CFGR_SW_PLL;
             break;
-        case CLOCK_SRC_OTHER: return APP_INVALID_PARAM;
+        case SYSCLK_SRC_OTHER: return APP_INVALID_PARAM;
     }
     
     uint32_t sws_mask;
     switch(source) {
-        case CLOCK_SRC_HSE: sws_mask = RCC_CFGR_SWS_HSE; break;
-        case CLOCK_SRC_MSI: sws_mask = RCC_CFGR_SWS_MSI; break;
-        case CLOCK_SRC_PLL: sws_mask = RCC_CFGR_SWS_PLL; break;
-        case CLOCK_SRC_OTHER: return APP_INVALID_PARAM;
+        case SYSCLK_SRC_HSE: sws_mask = RCC_CFGR_SWS_HSE; break;
+        case SYSCLK_SRC_MSI: sws_mask = RCC_CFGR_SWS_MSI; break;
+        case SYSCLK_SRC_PLL: sws_mask = RCC_CFGR_SWS_PLL; break;
+        case SYSCLK_SRC_OTHER: return APP_INVALID_PARAM;
         default: return APP_INVALID_PARAM;
     }
     
@@ -383,35 +344,87 @@ App_StatusTypeDef RCC_RTC_Init(RTC_Source_t source){
 }
 /* Funkcje diagnostyczne */
 
+/**
+  * @brief         Sprawdzenie czy czestotliwosc wyjsciowa PLL nie przekracza zakresu
+  * @note          czestotliwosc wyjsciowa w Hz f(VCO) PLL jest ustawiana wedlug:
+  *                f(VCO clock) = f(PLL clock input) × (PLLN / PLLM)
+  *                f(PLL_R) = f(VCO clock) / PLLR
+  */
+uint32_t RCC_PLLCLK_CalculateFrequency(uint32_t freq, uint8_t m, uint8_t n, uint8_t r){
+  uint32_t frequency = (uint32_t)freq * (uint32_t)n / (uint32_t)m;
+  frequency /= r;
+  return frequency;
+}
+
+/**
+  * @brief         Oblicza aktualną częstotliwość PLL na podstawie rejestrów.
+  */
+uint32_t RCC_PLLCLK_GetFrequency(void)
+{
+    uint32_t pllsrc = RCC->PLLCFGR & RCC_PLLCFGR_PLLSRC;
+    
+    uint32_t input_freq;
+    if(pllsrc == RCC_PLLCFGR_PLLSRC_MSI) {input_freq = RCC_MSI_GetFreq();
+    }else if(pllsrc == RCC_PLLCFGR_PLLSRC_HSE) input_freq = HSE_FREQ; else return 0;
+    
+    uint32_t m = (RCC->PLLCFGR & RCC_PLLCFGR_PLLM)>>RCC_PLLCFGR_PLLM_Pos;
+    uint32_t n = (RCC->PLLCFGR & RCC_PLLCFGR_PLLN)>>RCC_PLLCFGR_PLLN_Pos;
+    uint32_t r = (RCC->PLLCFGR & RCC_PLLCFGR_PLLR)>>RCC_PLLCFGR_PLLR_Pos;
+    
+    uint32_t r_value;
+    switch(r) {
+        case 0: r_value = 2; break;
+        case 1: r_value = 4; break;
+        case 2: r_value = 6; break;
+        case 3: r_value = 8; break;
+        default: r_value = 2;
+    }
+    
+    return (input_freq * n / m /r_value);
+}
+
+/**
+  * @brief         Pobiera źródło clocka PLL.
+  * @retval        PLL_Source_t Źródło clocka PLL
+  */
+PLL_Source_t RCC_PLLCLK_GetSource(void){
+  uint32_t pllsrc = RCC->PLLCFGR & RCC_PLLCFGR_PLLSRC; 
+  
+  switch (pllsrc) {
+    case RCC_PLLCFGR_PLLSRC_MSI: return PLL_SRC_MSI;
+    case RCC_PLLCFGR_PLLSRC_HSE: return PLL_SRC_HSE;
+    default: return PLL_SRC_OTHER;
+  }
+}
 
 /**
   * @brief         Pobiera zrodlo zegara systemowego.
   */
-ClockSource_t SystemClock_GetSource(void){
+SYSCLK_Source_t SYSCLK_GetSource(void){
   uint8_t sysclk_source = RCC->CFGR & RCC_CFGR_SWS;
 
   switch (sysclk_source)
   {
-  case RCC_CFGR_SWS_HSE: return CLOCK_SRC_HSE;
-  case RCC_CFGR_SWS_MSI: return CLOCK_SRC_MSI;
-  case RCC_CFGR_SWS_PLL: return CLOCK_SRC_PLL;
-  default:  return CLOCK_SRC_OTHER;
+  case RCC_CFGR_SWS_HSE: return SYSCLK_SRC_HSE;
+  case RCC_CFGR_SWS_MSI: return SYSCLK_SRC_MSI;
+  case RCC_CFGR_SWS_PLL: return SYSCLK_SRC_PLL;
+  default:  return SYSCLK_SRC_OTHER;
   }
 }
 
 /**
   * @brief         Pobiera aktualną częstotliwość clocka systemowego.
   */
-uint32_t SystemClock_GetSYSCLKFreq(void){
+uint32_t SYSCLK_GetFreq(void){
   
-  ClockSource_t clock_src = SystemClock_GetSource();
+  SYSCLK_Source_t clock_src = SYSCLK_GetSource();
 
   switch (clock_src)
   {
-  case CLOCK_SRC_HSE:   return HSE_FREQ;
-  case CLOCK_SRC_MSI: return RCC_MSI_GetFreq();
-  case CLOCK_SRC_PLL: return RCC_PLLCLK_GetFrequency();
-  case CLOCK_SRC_OTHER: return 0;
+  case SYSCLK_SRC_HSE:   return HSE_FREQ;
+  case SYSCLK_SRC_MSI: return RCC_MSI_GetFreq();
+  case SYSCLK_SRC_PLL: return RCC_PLLCLK_GetFrequency();
+  case SYSCLK_SRC_OTHER: return 0;
   default:  return 0;
   }
 }

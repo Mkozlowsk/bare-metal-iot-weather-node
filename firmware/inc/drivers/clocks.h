@@ -19,6 +19,7 @@
 #include "stm32l4xx.h"
 #include "stdbool.h"
 #include "app_status.h"
+#include "clocks_bitmap.h"
 
 #define HSE_FREQ 48000000// Czestotliwosc HSE w Hz ustawiana na podstawie hardware
 
@@ -26,11 +27,11 @@
   * @brief  Źródła zegaru systemowego.
   */
 typedef enum __attribute__((packed)){
-    CLOCK_SRC_MSI = 0, /**< Wewnętrzny oscylator multi-speed */
-    CLOCK_SRC_HSE,     /**< Zewnętrzny oscylator wysokiej prędkości */
-    CLOCK_SRC_PLL,     /**< Pętla fazowa (Phase-Locked Loop) */
-    CLOCK_SRC_OTHER,
-} ClockSource_t;
+    SYSCLK_SRC_MSI = 0, /**< Wewnętrzny oscylator multi-speed */
+    SYSCLK_SRC_HSE,     /**< Zewnętrzny oscylator wysokiej prędkości */
+    SYSCLK_SRC_PLL,     /**< Pętla fazowa (Phase-Locked Loop) */
+    SYSCLK_SRC_OTHER,
+} SYSCLK_Source_t;
 
 
 /* Funkcje inicjalizacji */
@@ -57,14 +58,8 @@ App_StatusTypeDef RCC_HSE_Init(bool bypass, uint32_t timeout);
 typedef enum __attribute__((packed)){
     PLL_SRC_MSI = 0,
     PLL_SRC_HSE,
-} PLLSource_t;
-
-
-
-
-
-
-
+    PLL_SRC_OTHER,
+} PLL_Source_t;
 
 /**
   * @brief         Inicjalizacja PLL.
@@ -75,7 +70,7 @@ typedef enum __attribute__((packed)){
   * @param timeout    Timeout w cyklach pętli sysclk
   * @retval        App_StatusTypeDef Status operacji
   */
-App_StatusTypeDef RCC_PLLCLK_Init(PLLSource_t source, uint8_t m, uint8_t n, uint8_t r, uint32_t timeout);
+App_StatusTypeDef RCC_PLLCLK_Init(PLL_Source_t source, uint8_t m, uint8_t n, uint8_t r, uint32_t timeout);
 
 /**
   * @brief         Wybór źródła clocka systemowego.
@@ -83,7 +78,7 @@ App_StatusTypeDef RCC_PLLCLK_Init(PLLSource_t source, uint8_t m, uint8_t n, uint
   * @param timeout Timeout w cyklach pętli
   * @retval        App_StatusTypeDef Status operacji
   */
-App_StatusTypeDef RCC_SYSCLK_SelectSource(ClockSource_t source, uint32_t timeout);
+App_StatusTypeDef RCC_SYSCLK_SelectSource(SYSCLK_Source_t source, uint32_t timeout);
 
 /**
   * @brief         Inicjalizacja LSI.
@@ -149,9 +144,15 @@ uint32_t RCC_PLLCLK_CalculateFrequency(uint32_t freq, uint8_t m, uint8_t n, uint
 
 /**
   * @brief         Oblicza aktualną częstotliwość PLL na podstawie rejestrów.
-  * @retval        Częstotliwość PLL [Hz]
+  * @retval        Częstotliwość PLL [Hz].
   */
-static uint32_t RCC_PLLCLK_GetFrequency(void);
+uint32_t RCC_PLLCLK_GetFrequency(void);
+
+/**
+  * @brief         Zwraca zrodlo PLL.
+  * @retval        PLL_Source_t Zrodlo PLL.
+  */
+PLL_Source_t RCC_PLLCLK_GetSource(void);
 
 /**
   * @brief          Zwrot wartosci czestotliwosci zegara MSI w Hz do wartosci uint32_t
@@ -163,14 +164,14 @@ uint32_t RCC_MSI_GetFreq();
   * @brief         Pobiera zrodlo zegara systemowego.
   * @retval        ClockSource_t Zrodlo zegara systemowego
   */
-ClockSource_t SystemClock_GetSource(void);
+SYSCLK_Source_t SYSCLK_GetSource(void);
 
 /* Funkcje diagnostyczne */
 /**
   * @brief         Pobiera aktualną częstotliwość clocka systemowego.
   * @retval        Częstotliwość w Hz
   */
-uint32_t SystemClock_GetSYSCLKFreq(void);
+uint32_t SYSCLK_GetFreq(void);
 
 
 /**

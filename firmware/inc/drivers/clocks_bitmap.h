@@ -20,6 +20,7 @@
 #include <stdbool.h>
 #include "stm32l476xx.h"
 #include "app_status.h"
+#include "clocks.h"
 
 // Typy identyfikatorów
 // Typy clocków systemowych
@@ -28,6 +29,8 @@ typedef enum {
     CLOCK_HSE,
     CLOCK_LSI,
     CLOCK_LSE,
+    CLOCK_PLL,
+    CLOCK_SYS,
     CLOCK_COUNT
 } ClockId_t;
 
@@ -70,7 +73,7 @@ typedef union {
  * @param           target Cel akwizycji
  * @retval          App_StatusTypeDef status aplikacji
  */
-App_StatusTypeDef CLK_Acquire(AcquireType_t type, AcquireTarget_t target, uint32_t timeout);
+App_StatusTypeDef CLK_Acquire(AcquireType_t type, AcquireTarget_t target);
 
 /**
  * @brief           Uniwersalna funkcja zwalniania zasobów clocka
@@ -107,17 +110,17 @@ uint32_t CLK_GetBusBitmap(BusId_t bus);
 void CLK_BitmapInit(void);
 
 // Makra dla wygody użytkowania
-#define CLK_ACQUIRE_CLOCK(clock, timeout) \
-    CLK_Acquire(ACQUIRE_TYPE_CLOCK, (AcquireTarget_t){.clock = (clock)}, (uint32_t)(timeout))
+#define CLK_ACQUIRE_CLOCK(clock) \
+    CLK_Acquire(ACQUIRE_TYPE_CLOCK, (AcquireTarget_t){.clock = (clock)})
 
-#define CLK_ACQUIRE_PERIPH(periph, timeout) \
-    CLK_Acquire(ACQUIRE_TYPE_PERIPH, (AcquireTarget_t){.periph = (periph)}, (uint32_t)(timeout))
+#define CLK_ACQUIRE_PERIPH(periph) \
+    CLK_Acquire(ACQUIRE_TYPE_PERIPH, (AcquireTarget_t){.periph = (periph)})
 
-#define CLK_ACQUIRE_BUS(bus, timeout) \
-    CLK_Acquire(ACQUIRE_TYPE_BUS, (AcquireTarget_t){.bus = (bus)}, (uint32_t)(timeout))
+#define CLK_ACQUIRE_BUS(bus) \
+    CLK_Acquire(ACQUIRE_TYPE_BUS, (AcquireTarget_t){.bus = (bus)})
 
-#define CLK_ACQUIRE_RAW(reg, mask, timeout) \
-    CLK_Acquire(ACQUIRE_TYPE_RAW, (AcquireTarget_t){.raw = {(reg), (mask)}}, (uint32_t)(timeout))
+#define CLK_ACQUIRE_RAW(reg, mask) \
+    CLK_Acquire(ACQUIRE_TYPE_RAW, (AcquireTarget_t){.raw = {(reg), (mask)}})
 
 #define CLK_RELEASE_CLOCK(clock, timeout) \
     CLK_Release(ACQUIRE_TYPE_CLOCK, (AcquireTarget_t){.clock = (clock)}, (uint32_t)(timeout))
