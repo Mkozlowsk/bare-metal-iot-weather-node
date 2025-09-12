@@ -126,12 +126,12 @@ static App_StatusTypeDef CLK_Acquire_Bus(BusId_t bus) {
             clock_usage[CLOCK_SYS]++;
             break;
         case BUS_APB1:
-            if(bus_usage[BUS_AHB]==0) return APP_DEPENDENT_CLOCK_NOT_CONFIGURED;
-            bus_usage[BUS_AHB]++;
+            if(bus_usage[BUS_APB1]==0) return APP_DEPENDENT_CLOCK_NOT_CONFIGURED;
+            bus_usage[BUS_APB1]++;
             break;
         case BUS_APB2:
-            if(bus_usage[BUS_AHB]==0) return APP_DEPENDENT_CLOCK_NOT_CONFIGURED;
-            bus_usage[BUS_AHB]++;
+            if(bus_usage[BUS_APB2]==0) return APP_DEPENDENT_CLOCK_NOT_CONFIGURED;
+            bus_usage[BUS_APB2]++;
             break;
         default: break;
     }
@@ -149,42 +149,111 @@ static App_StatusTypeDef CLK_Acquire_Raw(volatile uint32_t *reg, uint32_t mask) 
 
 static App_StatusTypeDef CLK_Release_Clock(ClockId_t clk) {
     if (clk >= CLOCK_COUNT) return APP_INVALID_PARAM;
-    
-    clock_usage[clk] &= ~(1u << clk);
-    if (clock_usage[clk] == 0) {
-        switch (clk) {
-            case CLOCK_MSI:
+    if(clock_usage[clk] == 0) return APP_ALREADY_RELEASED;
+    if(clock_usage[clk] > 1)return APP_DEPENDENCIES_NOT_RELEASED;
+    switch (clk) {
+        case CLOCK_PLL:{
+            PLL_Source_t source_pll = RCC_PLLCLK_GetSource();
+            switch (source_pll)
+            {
+            case PLL_SRC_HSE:
+                if(clock_usage[CLOCK_HSE] <= 1) return APP_DEPENDENT_CLOCK_NOT_CONFIGURED;
+                else clock_usage[CLOCK_HSE]--; //dodanie zaleznosci do HSE
                 break;
-            case CLOCK_HSE:
+            case PLL_SRC_MSI:
+                if(clock_usage[CLOCK_MSI] <= 1) return APP_DEPENDENT_CLOCK_NOT_CONFIGURED;
+                else clock_usage[CLOCK_MSI]--;
                 break;
-            case CLOCK_LSI:
+            case PLL_SRC_OTHER: return APP_INVALID_PARAM;
+            }
+            break;}
+        case CLOCK_SYS:{
+            SYSCLK_Source_t source_sysclk = SYSCLK_GetSource();
+            switch (source_sysclk)
+            {
+            case SYSCLK_SRC_HSE:
+                if(clock_usage[CLOCK_HSE] <= 1) return APP_DEPENDENT_CLOCK_NOT_CONFIGURED;
+                else clock_usage[CLOCK_HSE]--;
                 break;
-            case CLOCK_LSE:
+            case SYSCLK_SRC_MSI:
+                if(clock_usage[CLOCK_MSI] <= 1) return APP_DEPENDENT_CLOCK_NOT_CONFIGURED;
+                else clock_usage[CLOCK_MSI]--;
                 break;
-            default: break;
-        }
+            case SYSCLK_SRC_PLL:
+                if(clock_usage[CLOCK_PLL] <= 1) return APP_DEPENDENT_CLOCK_NOT_CONFIGURED;
+                else clock_usage[CLOCK_PLL]--;
+                break;
+            case SYSCLK_SRC_OTHER: return APP_INVALID_PARAM;
+            }
+        break;}
+        default: break;
     }
+    clock_usage[clk]--; //zmniejsz licznik dependency dla danego zegara
+
     return APP_OK;
 }
 
 static App_StatusTypeDef CLK_Release_Periph(PeripheralId_t periph) {
-    if (periph >= PERIPH_COUNT) return APP_INVALID_PARAM;
-    
-    peripheral_usage[periph] &= ~(1u << periph);
-    if (peripheral_usage[periph] == 0) { // do implementacji
+    if(peripheral_usage[periph] == 0) return APP_ALREADY_RELEASED;
+    if(peripheral_usage[periph] > 1)return APP_DEPENDENCIES_NOT_RELEASED;
+
+    switch (periph)
+    {
+    case PERIPH_RTC:{
+        RTC_Source_t source_rtc = RCC_RTC_GetSource();
+        switch (source_rtc)
+        {
+        case RTC_SOURCE_HSE:
+            if(clock_usage[CLOCK_HSE]<=1) return APP_DEPENDENT_CLOCK_NOT_CONFIGURED;
+            clock_usage[CLOCK_HSE]--;
+            break;
+        case RTC_SOURCE_LSE:
+            if(clock_usage[CLOCK_LSE]<=1) return APP_DEPENDENT_CLOCK_NOT_CONFIGURED;
+            clock_usage[CLOCK_LSE]--;
+            break;
+        case RTC_SOURCE_LSI:
+            if(clock_usage[CLOCK_LSI]<=1) return APP_DEPENDENT_CLOCK_NOT_CONFIGURED;
+            clock_usage[CLOCK_LSI]--;
+            break;
+        case RTC_SOURCE_OTHER: return APP_INVALID_PARAM;
+        default:
+            break;
+        }
+
+        break;}
+    case PERIPH_PWR:{
+        if(bus_usage[BUS_APB1]<=1) return APP_DEPENDENT_CLOCK_NOT_CONFIGURED;
+            bus_usage[BUS_APB1]--;
+        break;}
+    default:
+        break;
     }
+
+    peripheral_usage[periph]--;
     return APP_OK;
 }
 
 static App_StatusTypeDef CLK_Release_Bus(BusId_t bus) {
-    if (bus >= BUS_COUNT) return APP_INVALID_PARAM;
-    
-    bus_usage[bus] &= ~(1u << bus);
-    if (bus_usage[bus] == 0) {
-        switch (bus) {
-            default: break;
-        }
+    if(bus_usage[bus] == 0) return APP_ALREADY_RELEASED;
+    if(bus_usage[bus] > 1)return APP_DEPENDENCIES_NOT_RELEASED;
+
+    switch (bus) {
+        case BUS_AHB:
+            if(clock_usage[CLOCK_SYS]<=1) return APP_DEPENDENT_CLOCK_NOT_CONFIGURED;
+            clock_usage[CLOCK_SYS]--;
+            break;
+        case BUS_APB1:
+            if(bus_usage[BUS_APB1]<=1) return APP_DEPENDENT_CLOCK_NOT_CONFIGURED;
+            bus_usage[BUS_APB1]--;
+            break;
+        case BUS_APB2:
+            if(bus_usage[BUS_APB2]<=1) return APP_DEPENDENT_CLOCK_NOT_CONFIGURED;
+            bus_usage[BUS_APB2]--;
+            break;
+        default: break;
     }
+
+    bus_usage[bus]--;
     return APP_OK;
 }
 

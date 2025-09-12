@@ -24,7 +24,9 @@ typedef enum {
     APP_NOT_READY = 0x05U, /**< Peryferium nie jest gotowe */
     APP_CLOCK_ERROR = 0x06U, /**< Blad konfiguracji zegara */
     APP_ALREADY_ACQUIRED = 0x07U, /** Ponowna proba acquire tego samego typu */
-    APP_DEPENDENT_CLOCK_NOT_CONFIGURED = 0x08U, /** Zaleznosc nieskonfigurowana */
+    APP_ALREADY_RELEASED = 0x08U, /** Proba release juz wylaczonego urzadzenia */
+    APP_DEPENDENCIES_NOT_RELEASED = 0x09U, /** Proba release urzadzenia bez uprzedniego release urzadzen od niego zaleznych */
+    APP_DEPENDENT_CLOCK_NOT_CONFIGURED = 0x09U, /** Zaleznosc nieskonfigurowana */
 } App_StatusTypeDef;
 
 #endif // APP_STATUS_H
