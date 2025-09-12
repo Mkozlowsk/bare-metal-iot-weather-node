@@ -22,18 +22,19 @@
 - [x] Konfiguracja PLL
 - [x] Konfiguracja LSI
 - [x] Konfiguracje LSE
-- [ ] Konfiguracja RTC
+- [x] Konfiguracja RTC
 - [ ] Dependency bitmap zegarow 
 - [ ] Konfiguracja VCO
 - [ ] Kalibracja zegarow
 - [x] Konfiguracja SysCLK
-- [ ] Deinicjalizacje funkcji
+- [ ] Deinicjalizacje funkcji zegarow
 - [ ] System zabezpieczen zegarow CSE
 - [ ] Obsluga LL bledow i ich logowanie
 - [ ] Zaawansowane zarzadzanie energia, skalowanie napiecia od czestotliwosci, tryby niskopradowe.
 - [ ] Funkcje diagnostyczne zegarow
 - [ ] Preskalery busow AHB, APB
 - [ ] Testy zegarow
+
 - [ ] Implementacja GPIO
 - [ ] Implementacja UART z przerwaniami do debugowania
 - [ ] Implementacja czujnikow i ich protokolow komunikacyjnych

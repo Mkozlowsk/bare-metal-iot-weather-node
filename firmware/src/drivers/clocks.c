@@ -307,17 +307,20 @@ App_StatusTypeDef RCC_LSE_ChangeDrive(LSE_XTAL_Drive_t drive, uint32_t timeout){
  */
 
 App_StatusTypeDef RCC_RTC_Init(RTC_Source_t source){
-  
-  RCC->APB1ENR1 |= RCC_APB1ENR1_PWREN;
-  
-  __NOP();
-  __NOP();
+  bool is_apb1_enabled = 0;
+  if(RCC->APB1ENR1 & RCC_APB1ENR1_PWREN) is_apb1_enabled = 1;
+  else {
+    RCC->APB1ENR1 |= RCC_APB1ENR1_PWREN;
+    __NOP();
+    __NOP();
+  }
 
   PWR->CR1 |= PWR_CR1_DBP;
 
   RCC->BDCR &= ~RCC_BDCR_RTCEN;
 
-  uint16_t source_val = 0;
+  uint16_t source_val = 0;  if(RCC->APB1ENR1 & RCC_APB1ENR1_PWREN) is_apb1_enabled = 1;
+
   switch (source) {
   case RTC_SOURCE_LSE:
     if(!(RCC->BDCR & RCC_BDCR_LSERDY)) return APP_NOT_READY;
@@ -333,6 +336,11 @@ App_StatusTypeDef RCC_RTC_Init(RTC_Source_t source){
     break;
   default:
     PWR->CR1 &= ~PWR_CR1_DBP;
+    if(is_apb1_enabled == 0){
+    RCC->APB1ENR1 &= ~RCC_APB1ENR1_PWREN; //jesli apb1 bylo wylaczone przed wywolaniem funkcji z powrtoem je wylacz
+    __NOP(); 
+    __NOP(); 
+    }
     return APP_INVALID_PARAM;
 }
   
@@ -340,6 +348,11 @@ App_StatusTypeDef RCC_RTC_Init(RTC_Source_t source){
   RCC->BDCR |= source_val;
   RCC->BDCR |= RCC_BDCR_RTCEN;
   PWR->CR1 &= ~PWR_CR1_DBP;
+  if(is_apb1_enabled == 0){
+    RCC->APB1ENR1 &= ~RCC_APB1ENR1_PWREN; //jesli apb1 bylo wylaczone przed wywolaniem funkcji z powrtoem je wylacz
+    __NOP(); 
+    __NOP(); 
+  }
   return APP_OK;
 }
 /* Funkcje diagnostyczne */
@@ -443,4 +456,17 @@ LSE_XTAL_Drive_t RCC_LSE_GetDrive(void){
   default: return LSE_DRIVE_LOW; //Zeby kompilator nie zwracal warninga
   }
   return LSE_DRIVE_LOW; //Zeby kompilator nie zwracal warninga
+}
+
+/**
+  * @brief         Pobiera aktualne zrodlo RTC; 
+ */
+RTC_Source_t RCC_RTC_GetSource(void){
+  uint16_t source = RCC->BDCR & RCC_BDCR_RTCSEL;
+  switch (source) {
+  case (0x1 << RCC_BDCR_RTCSEL_Pos): return RTC_SOURCE_LSE;
+  case (0x2 << RCC_BDCR_RTCSEL_Pos): return RTC_SOURCE_LSI;
+  case (0x3 << RCC_BDCR_RTCSEL_Pos): return RTC_SOURCE_HSE;
+  default: return RTC_SOURCE_OTHER;
+  }
 }

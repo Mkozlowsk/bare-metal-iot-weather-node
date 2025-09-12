@@ -122,6 +122,7 @@ typedef enum __attribute__((packed)){
   RTC_SOURCE_LSE,
   RTC_SOURCE_LSI,
   RTC_SOURCE_HSE,
+  RTC_SOURCE_OTHER
 }RTC_Source_t;
 
 /**
@@ -184,5 +185,11 @@ void SystemClock_PrintConfig(void);
   * @retval        LSE_XTAL_Drive_t stan drive LSE
   */
 LSE_XTAL_Drive_t RCC_LSE_GetDrive(void);
+
+/**
+  * @brief         Pobiera zrodlo zegara RTC.
+  * @retval        RTC_Source_t Zrodlo RTC.
+  */
+RTC_Source_t RCC_RTC_GetSource(void);
 
 #endif // CLOCKS_H
