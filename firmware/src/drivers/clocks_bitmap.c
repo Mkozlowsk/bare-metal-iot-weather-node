@@ -36,7 +36,7 @@ static App_StatusTypeDef CLK_Acquire_Clock(ClockId_t clk) {
 
     if (clock_usage[clk] == 0) { 
         switch (clk) {
-            case CLOCK_PLL:
+            case CLOCK_PLL:{
                 PLL_Source_t source_pll = RCC_PLLCLK_GetSource();
                 switch (source_pll)
                 {
@@ -50,8 +50,8 @@ static App_StatusTypeDef CLK_Acquire_Clock(ClockId_t clk) {
                     break;
                 case PLL_SRC_OTHER: return APP_INVALID_PARAM;
                 }
-                break;
-            case CLOCK_SYS:
+                break;}
+            case CLOCK_SYS:{
                 SYSCLK_Source_t source_sysclk = SYSCLK_GetSource();
                 switch (source_sysclk)
                 {
@@ -69,7 +69,7 @@ static App_StatusTypeDef CLK_Acquire_Clock(ClockId_t clk) {
                     break;
                 case SYSCLK_SRC_OTHER: return APP_INVALID_PARAM;
                 }
-            break;
+            break;}
             default: break;
         }
         clock_usage[clk]++; //zwieksz licznik dependency dla danego zegara
