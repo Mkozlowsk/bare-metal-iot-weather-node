@@ -13,6 +13,7 @@
   *****************************************************************************/
 
 #include "clocks_bitmap.h"
+#include "clocks.h"
 
 // Stan uzycia zasobów
 static uint32_t clock_usage[CLOCK_COUNT];
@@ -126,12 +127,12 @@ static App_StatusTypeDef CLK_Acquire_Bus(BusId_t bus) {
             clock_usage[CLOCK_SYS]++;
             break;
         case BUS_APB1:
-            if(bus_usage[BUS_APB1]==0) return APP_DEPENDENT_CLOCK_NOT_CONFIGURED;
-            bus_usage[BUS_APB1]++;
+            if(bus_usage[BUS_AHB]==0) return APP_DEPENDENT_CLOCK_NOT_CONFIGURED;
+            bus_usage[BUS_AHB]++;
             break;
         case BUS_APB2:
-            if(bus_usage[BUS_APB2]==0) return APP_DEPENDENT_CLOCK_NOT_CONFIGURED;
-            bus_usage[BUS_APB2]++;
+            if(bus_usage[BUS_AHB]==0) return APP_DEPENDENT_CLOCK_NOT_CONFIGURED;
+            bus_usage[BUS_AHB]++;
             break;
         default: break;
     }
@@ -243,12 +244,12 @@ static App_StatusTypeDef CLK_Release_Bus(BusId_t bus) {
             clock_usage[CLOCK_SYS]--;
             break;
         case BUS_APB1:
-            if(bus_usage[BUS_APB1]<=1) return APP_DEPENDENT_CLOCK_NOT_CONFIGURED;
-            bus_usage[BUS_APB1]--;
+            if(bus_usage[BUS_AHB]<=1) return APP_DEPENDENT_CLOCK_NOT_CONFIGURED;
+            bus_usage[BUS_AHB]--;
             break;
         case BUS_APB2:
-            if(bus_usage[BUS_APB2]<=1) return APP_DEPENDENT_CLOCK_NOT_CONFIGURED;
-            bus_usage[BUS_APB2]--;
+            if(bus_usage[BUS_AHB]<=1) return APP_DEPENDENT_CLOCK_NOT_CONFIGURED;
+            bus_usage[BUS_AHB]--;
             break;
         default: break;
     }

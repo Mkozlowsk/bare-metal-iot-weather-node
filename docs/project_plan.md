@@ -21,7 +21,7 @@
 - [x] CLK: Konfiguracja LSI
 - [x] CLK: Konfiguracje LSE
 - [x] CLK: Konfiguracja RTC
-- [ ] CLK: Dependency bitmap zegarow 
+- [x] CLK: Dependency bitmap zegarow
 - [ ] CLK: Konfiguracja VCO
 - [ ] CLK: Kalibracja zegarow
 - [x] CLK: Konfiguracja SysCLK

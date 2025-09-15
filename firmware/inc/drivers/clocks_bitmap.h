@@ -20,9 +20,8 @@
 #include <stdbool.h>
 #include "stm32l476xx.h"
 #include "app_status.h"
-#include "clocks.h"
 
-// Typy identyfikatorów
+
 // Typy clocków systemowych
 typedef enum {
     CLOCK_MSI = 0,
@@ -112,28 +111,28 @@ uint32_t CLK_GetBusBitmap(BusId_t bus);
 void CLK_BitmapInit(void);
 
 // Makra dla wygody użytkowania
-#define CLK_ACQUIRE_CLOCK(clock) \
-    CLK_Acquire(ACQUIRE_TYPE_CLOCK, (AcquireTarget_t){.clock = (clock)})
+#define CLK_ACQUIRE_CLOCK(val) \
+    CLK_Acquire(ACQUIRE_TYPE_CLOCK, (AcquireTarget_t){.clock = ((ClockId_t)(val))})
 
-#define CLK_ACQUIRE_PERIPH(periph) \
-    CLK_Acquire(ACQUIRE_TYPE_PERIPH, (AcquireTarget_t){.periph = (periph)})
+#define CLK_ACQUIRE_PERIPH(val) \
+    CLK_Acquire(ACQUIRE_TYPE_PERIPH, (AcquireTarget_t){.periph = (val)})
 
-#define CLK_ACQUIRE_BUS(bus) \
-    CLK_Acquire(ACQUIRE_TYPE_BUS, (AcquireTarget_t){.bus = (bus)})
+#define CLK_ACQUIRE_BUS(val) \
+    CLK_Acquire(ACQUIRE_TYPE_BUS, (AcquireTarget_t){.bus = (val)})
 
-#define CLK_ACQUIRE_RAW(reg, mask) \
-    CLK_Acquire(ACQUIRE_TYPE_RAW, (AcquireTarget_t){.raw = {(reg), (mask)}})
+#define CLK_ACQUIRE_RAW(val, val_mask) \
+    CLK_Acquire(ACQUIRE_TYPE_RAW, (AcquireTarget_t){.raw = {(val), (val_mask)}})
 
-#define CLK_RELEASE_CLOCK(clock) \
-    CLK_Release(ACQUIRE_TYPE_CLOCK, (AcquireTarget_t){.clock = (clock)})
+#define CLK_RELEASE_CLOCK(val) \
+    CLK_Release(ACQUIRE_TYPE_CLOCK, (AcquireTarget_t){.clock = (val)})
 
-#define CLK_RELEASE_PERIPH(periph) \
-    CLK_Release(ACQUIRE_TYPE_PERIPH, (AcquireTarget_t){.periph = (periph)})
+#define CLK_RELEASE_PERIPH(val) \
+    CLK_Release(ACQUIRE_TYPE_PERIPH, (AcquireTarget_t){.periph = (val)})
 
-#define CLK_RELEASE_BUS(bus) \
-    CLK_Release(ACQUIRE_TYPE_BUS, (AcquireTarget_t){.bus = (bus)})
+#define CLK_RELEASE_BUS(val) \
+    CLK_Release(ACQUIRE_TYPE_BUS, (AcquireTarget_t){.bus = (val)})
 
-#define CLK_RELEASE_RAW(reg, mask) \
-    CLK_Release(ACQUIRE_TYPE_RAW, (AcquireTarget_t){.raw = {(reg), (mask)}})
+#define CLK_RELEASE_RAW(val, val_mask) \
+    CLK_Release(ACQUIRE_TYPE_RAW, (AcquireTarget_t){.raw = {(reg), (val_mask)}})
 
 #endif // CLOCKS_BITMAP_H

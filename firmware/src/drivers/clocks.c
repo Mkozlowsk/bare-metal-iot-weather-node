@@ -8,12 +8,14 @@
   *                oraz konfigurację preskalerów dla magistral AHB, APB1, APB2.
   *
   * @note          Kluczowe dla strategii low-power: MSI dla czujników, HSE+PLL dla radia.
+  * @note          Funkcja uzywa sledzenia zaleznosci z clocks_bitmap.h
   * @author        Mateusz Kozlowski
   * @date          01.09.2025
   * @version       v1.0
   *****************************************************************************/
-
+#include "clocks_bitmap.h"
 #include "clocks.h"
+
 /**
   * @brief         Inicjalizacja oscylatora MSI.
   * @details       Funkcja konfiguruje zakres MSI, włącza oscylator i czeka na gotowość.
@@ -22,60 +24,70 @@
   */
 App_StatusTypeDef RCC_MSI_Init(uint8_t msi_range, uint32_t timeout){
     if(msi_range > 0xB) return APP_INVALID_PARAM;
-    
-    if((RCC->CR & RCC_CR_MSION) && !(RCC->CR & RCC_CR_MSIRDY)) return APP_NOT_READY; // Jesli MSI jest wlaczone, ale nie jest ready to nie nalezy go modyfikowac
-   
-    RCC->CSR &= ~RCC_CSR_MSISRANGE;
-    RCC->CSR |= (msi_range << RCC_CSR_MSISRANGE_Pos); // Czestotliwosc po standby
+    uint32_t timeout_enable = timeout, timeout_disable = timeout;
 
+    //Sprawdzenie zaleznosci zegara przed uruchomieniem
+    // Jesli acquire sie nie udal funkcja przerywa dzialanie
+    App_StatusTypeDef status = CLK_ACQUIRE_CLOCK(CLOCK_MSI);
+    if (status != APP_OK) return status; 
+
+    RCC->CR &= ~RCC_CR_MSION;
+
+    // Oczekiwanie na wylaczenie MSI
+    while((RCC->CR & RCC_CR_MSIRDY) != 0){
+      if(--timeout_disable == 0) 
+      {
+        status = CLK_RELEASE_CLOCK(CLOCK_MSI);
+        if (status != APP_OK) return status;
+        else return APP_TIMEOUT;
+      }
+    }
+
+    // Ustawienie czestotliwosci po standby i w normalnej operacji
+    RCC->CSR &= ~RCC_CSR_MSISRANGE;
+    RCC->CSR |= (msi_range << RCC_CSR_MSISRANGE_Pos); 
     RCC->CR &= ~RCC_CR_MSIRANGE;
     RCC->CR |= (msi_range << RCC_CR_MSIRANGE_Pos);
 
-    if(!(RCC->CR & RCC_CR_MSION)) RCC->CR |= RCC_CR_MSION; //Jesli MSI bylo wylaczone nalezy je wlaczyc
+    RCC->CR |= RCC_CR_MSION;
     
+    // Oczekiwanie na wlaczenie MSI
     while((RCC->CR & RCC_CR_MSIRDY) == 0){
-      if(--timeout == 0) return APP_TIMEOUT;
+      if(--timeout_enable == 0) 
+      {
+        status = CLK_RELEASE_CLOCK(CLOCK_MSI);
+        if (status != APP_OK) return status;
+        else return APP_TIMEOUT;
+      }
+    }
+    
+    return APP_OK;
+}
+
+/**
+  * @brief         Deinicjalizacja oscylatora MSI.
+  * @details       Funkcja wylacza oscylator MSI jesli nie ma zadnego zaleznego od niego peryferium.
+  */
+
+App_StatusTypeDef RCC_MSI_Deinit(uint32_t timeout){
+  App_StatusTypeDef status = CLK_RELEASE_CLOCK(CLOCK_MSI);
+    if (status != APP_OK) return status; 
+
+    RCC->CR &= ~RCC_CR_MSION;
+
+    // Oczekiwanie na wylaczenie MSI
+    while((RCC->CR & RCC_CR_MSIRDY) != 0){
+      if(--timeout == 0) 
+      {
+        return APP_TIMEOUT;
+      }
     }
 
     return APP_OK;
 }
 
-/**
-  * @brief         Zwrot wartosci MSI w Hz do wartosci uint16_t
-  */
-uint32_t RCC_MSI_GetFreq(){
-  uint8_t freq = (RCC->CR & RCC_CR_MSIRANGE) >> RCC_CR_MSIRANGE_Pos;
-  switch (freq)
-  {
-  case 0x0:
-    return 100000;
-    break;
-  case 0x1:
-    return 200000;
-  case 0x2:
-    return 400000;
-  case 0x3:
-    return 800000;
-  case 0x4:
-    return 1000000;
-  case 0x5:
-    return 2000000;
-  case 0x6:
-    return 4000000;
-  case 0x7:
-    return 8000000;
-  case 0x8:
-    return 16000000;
-  case 0x9:
-    return 24000000;
-  case 0xA:
-    return 32000000;
-  case 0xB:
-    return 48000000;
-  default:
-    return 0;
-  }
-}
+
+
 
 /**
   * @brief         Inicjalizacja zewnetrznego oscylatora HSE.
@@ -86,10 +98,20 @@ uint32_t RCC_MSI_GetFreq(){
   */
 App_StatusTypeDef RCC_HSE_Init(bool bypass, uint32_t timeout){
   
+  uint32_t timeout_enable = timeout, timeout_disable = timeout;
+  //Sprawdzenie zaleznosci zegara przed uruchomieniem
+  App_StatusTypeDef status = CLK_ACQUIRE_CLOCK(CLOCK_HSE);
+  if (status != APP_OK) return status;
+  
   RCC->CR &= ~RCC_CR_HSEON;
 
-  while((RCC->CR & RCC_CR_HSERDY) != 0){ // Oczekiwanie na wyzerowanie bitu HSE_Ready
-    if(--timeout == 0) return APP_TIMEOUT;
+  // Oczekiwanie na wylaczenie HSE
+  while((RCC->CR & RCC_CR_HSERDY) != 0){ 
+      if(--timeout_disable == 0){
+      status = CLK_RELEASE_CLOCK(CLOCK_HSE);
+      if (status != APP_OK) return status;
+      return APP_TIMEOUT;
+    }
   }
 
   RCC->CR &= ~RCC_CR_HSEBYP;
@@ -97,12 +119,36 @@ App_StatusTypeDef RCC_HSE_Init(bool bypass, uint32_t timeout){
 
   RCC->CR |= RCC_CR_HSEON;
 
+  // Oczekiwanie na wlaczenie HSE
   while((RCC->CR & RCC_CR_HSERDY) == 0){
-    if(--timeout == 0) return APP_TIMEOUT;
+    if(--timeout_enable == 0){
+      status = CLK_RELEASE_CLOCK(CLOCK_HSE);
+      if (status != APP_OK) return status;
+      return APP_TIMEOUT;
+    }
   }
 
   return APP_OK;
 }
+/**
+  * @brief         Deinicjalizacja zewnetrznego oscylatora HSE.
+  */
+App_StatusTypeDef RCC_HSE_Deinit(bool bypass, uint32_t timeout){
+  
+  //Sprawdzenie zaleznosci zegara przed wylaczeniem
+  App_StatusTypeDef status = CLK_RELEASE_CLOCK(CLOCK_HSE);
+  if (status != APP_OK) return status;
+  RCC->CR &= ~RCC_CR_HSEON;
+
+  // Oczekiwanie na wylaczenie HSE
+  while((RCC->CR & RCC_CR_HSERDY) != 0){ 
+      if(--timeout == 0){
+      return APP_TIMEOUT;
+    }
+  }
+  return APP_OK;
+}
+
 
 /**
   * @brief         Inicjalizacja PLL.
@@ -121,8 +167,10 @@ App_StatusTypeDef RCC_PLLCLK_Init(PLL_Source_t source, uint8_t m, uint8_t n, uin
   if(n < 8 || n > 86) return APP_INVALID_PARAM;
   if(r != 2 && r != 4 && r != 6 && r!=8) return APP_INVALID_PARAM;
 
-  uint32_t timeout_disable = timeout;
-  uint32_t timeout_enable = timeout;
+
+  
+
+  uint32_t timeout_disable = timeout, timeout_enable = timeout;
 
 
   uint32_t pllclk_input_freq = 0;
@@ -131,10 +179,19 @@ App_StatusTypeDef RCC_PLLCLK_Init(PLL_Source_t source, uint8_t m, uint8_t n, uin
   uint32_t pllclk_output_freq = RCC_PLLCLK_CalculateFrequency(pllclk_input_freq, m, n, r);
 
   if(pllclk_output_freq > 80000000) return APP_ERROR; // czestotliwosc przekroczyla zakres
+
+  App_StatusTypeDef status = CLK_ACQUIRE_CLOCK(CLOCK_PLL);
+  if (status != APP_OK) return status;
+
   RCC->CR &= ~RCC_CR_PLLON;
 
-  while((RCC->CR & RCC_CR_PLLRDY) != 0){ // Oczekiwanie na wyzerowanie bitu PLL_Ready
-    if(--timeout_disable == 0) return APP_TIMEOUT;
+  // Oczekiwanie na wylaczenie PLL
+  while((RCC->CR & RCC_CR_PLLRDY) != 0){
+    if(--timeout_disable == 0) {
+      status = CLK_RELEASE_CLOCK(CLOCK_PLL);
+      if (status != APP_OK) return status;
+      return APP_TIMEOUT;
+    }
   }
 
   RCC->PLLCFGR &= ~ RCC_PLLCFGR_PLLM;
@@ -156,94 +213,147 @@ App_StatusTypeDef RCC_PLLCLK_Init(PLL_Source_t source, uint8_t m, uint8_t n, uin
   RCC->CR |= RCC_CR_PLLON;
 
   while((RCC->CR & RCC_CR_PLLRDY) == 0){
-    if(--timeout_enable == 0) return APP_TIMEOUT;
+    if(--timeout_enable == 0) {
+      status = CLK_RELEASE_CLOCK(CLOCK_PLL);
+      if (status != APP_OK) return status;
+      return APP_TIMEOUT;
+    }
   }
 
   return APP_OK;
 }
 
+App_StatusTypeDef RCC_PLLCLK_Deinit(uint32_t timeout){
+  App_StatusTypeDef status = CLK_RELEASE_CLOCK(CLOCK_PLL);
+  if (status != APP_OK) return status;
+
+  RCC->CR &= ~RCC_CR_PLLON;
+
+  // Oczekiwanie na wylaczenie PLL
+  while((RCC->CR & RCC_CR_PLLRDY) != 0){ 
+    if(--timeout == 0) {
+      return APP_TIMEOUT;
+    }
+  }
+  return APP_OK;
+}
+
 
 /**
-  * @brief         Wybór źródła clock  uint8_t m = (RCC->PLLCFGR & RCC_PLLCFGR_PLLM_Msk) >> RCC_PLLCFGR_PLLM_Pos;
-  uint8_t n = (RCC->PLLCFGR & RCC_PLLCFGR_PLLN_Msk) >> RCC_PLLCFGR_PLLN_Pos;
-  uint8_t r = (RCC->PLLCFGR & RCC_PLLCFGR_PLLR_Msk) >> RCC_PLLCFGR_PLLR_Pos;a systemowego.
+  * @brief         Wybór źródła clocka systemowego.
   * @param source  Źródło clocka do wyboru
   * @note          Funkcja czeka na gotowość źródła przed przełączeniem i na
   *                potwierdzenie przełączenia przez hardware.
   */
 App_StatusTypeDef RCC_SYSCLK_SelectSource(SYSCLK_Source_t source, uint32_t timeout)
 {
-    // Sprawdzenie czy zrodlo jest gotowe
-    switch(source) {
-        case SYSCLK_SRC_MSI:
-            if(!(RCC->CR & RCC_CR_MSIRDY)) return APP_NOT_READY;
-            break;
-        case SYSCLK_SRC_HSE:
-            if(!(RCC->CR & RCC_CR_HSERDY)) return APP_NOT_READY;
-            break;
-        case SYSCLK_SRC_PLL:
-            if(!(RCC->CR & RCC_CR_PLLRDY)) return APP_NOT_READY;
-            break;
-        case SYSCLK_SRC_OTHER: return APP_INVALID_PARAM;
-        default:
-            return APP_INVALID_PARAM;
-    }
-    
-    RCC->CFGR &= ~RCC_CFGR_SW;
-    switch(source) {
-        case SYSCLK_SRC_HSE:
-            RCC->CFGR |= RCC_CFGR_SW_HSE;
-            break;
-        case SYSCLK_SRC_MSI:
-            RCC->CFGR |= RCC_CFGR_SW_MSI;
-            break;
-        case SYSCLK_SRC_PLL:  
-            RCC->CFGR |= RCC_CFGR_SW_PLL;
-            break;
-        case SYSCLK_SRC_OTHER: return APP_INVALID_PARAM;
-    }
-    
-    uint32_t sws_mask;
-    switch(source) {
-        case SYSCLK_SRC_HSE: sws_mask = RCC_CFGR_SWS_HSE; break;
-        case SYSCLK_SRC_MSI: sws_mask = RCC_CFGR_SWS_MSI; break;
-        case SYSCLK_SRC_PLL: sws_mask = RCC_CFGR_SWS_PLL; break;
-        case SYSCLK_SRC_OTHER: return APP_INVALID_PARAM;
-        default: return APP_INVALID_PARAM;
-    }
-    
-    while((RCC->CFGR & RCC_CFGR_SWS) != sws_mask) {
-        if(--timeout == 0) {
-            return APP_TIMEOUT;
-        }
-    }
-    
-    return APP_OK;
+  // Sprawdzenie czy zrodlo jest gotowe
+  switch(source) {
+      case SYSCLK_SRC_MSI:
+          if(!(RCC->CR & RCC_CR_MSIRDY)) return APP_NOT_READY;
+          break;
+      case SYSCLK_SRC_HSE:
+          if(!(RCC->CR & RCC_CR_HSERDY)) return APP_NOT_READY;
+          break;
+      case SYSCLK_SRC_PLL:
+          if(!(RCC->CR & RCC_CR_PLLRDY)) return APP_NOT_READY;
+          break;
+      case SYSCLK_SRC_OTHER: return APP_INVALID_PARAM;
+      default:
+          return APP_INVALID_PARAM;
+  }
+  
+ 
+
+  RCC->CFGR &= ~RCC_CFGR_SW;
+  switch(source) {
+      case SYSCLK_SRC_HSE:
+          RCC->CFGR |= RCC_CFGR_SW_HSE;
+          break;
+      case SYSCLK_SRC_MSI:
+          RCC->CFGR |= RCC_CFGR_SW_MSI;
+          break;
+      case SYSCLK_SRC_PLL:  
+          RCC->CFGR |= RCC_CFGR_SW_PLL;
+          break;
+      case SYSCLK_SRC_OTHER: return APP_INVALID_PARAM;
+  }
+
+   // Sprawdzenie czy zaleznosci
+  App_StatusTypeDef status = CLK_ACQUIRE_CLOCK(CLOCK_SYS);
+  if (status != APP_OK) return status;
+  
+  uint32_t sws_mask;
+  switch(source) {
+      case SYSCLK_SRC_HSE: sws_mask = RCC_CFGR_SWS_HSE; break;
+      case SYSCLK_SRC_MSI: sws_mask = RCC_CFGR_SWS_MSI; break;
+      case SYSCLK_SRC_PLL: sws_mask = RCC_CFGR_SWS_PLL; break;
+      case SYSCLK_SRC_OTHER: return APP_INVALID_PARAM;
+      default: return APP_INVALID_PARAM;
+  }
+  
+  while((RCC->CFGR & RCC_CFGR_SWS) != sws_mask) {
+      if(--timeout == 0) {
+        return APP_TIMEOUT;
+      }
+  }
+
+  return APP_OK;
 }
 
 
 /**
   * @brief         Inicjalizacja LSI.
   */
-  App_StatusTypeDef RCC_LSI_Init(uint32_t timeout){
+App_StatusTypeDef RCC_LSI_Init(uint32_t timeout){
+  App_StatusTypeDef status = CLK_ACQUIRE_CLOCK(CLOCK_LSI);
+  if (status != APP_OK) return status;
+  
   RCC->CR |= RCC_CSR_LSION;
   while((RCC->CSR & RCC_CSR_LSIRDY) == 0){
-    if(--timeout == 0) return APP_TIMEOUT;
+    if(--timeout == 0) {
+      status = CLK_RELEASE_CLOCK(CLOCK_LSI);
+      if (status != APP_OK) return status;
+      return APP_TIMEOUT;
+    }
   }
 
   return APP_OK;
 }
+
+/**
+  * @brief         Deinicjalizacja LSI.
+  */
+App_StatusTypeDef RCC_LSI_Deinit(uint32_t timeout){
+  App_StatusTypeDef status = CLK_RELEASE_CLOCK(CLOCK_LSI);
+  if (status != APP_OK) return status;
+  
+  RCC->CR &= ~RCC_CSR_LSION;
+  while((RCC->CSR & RCC_CSR_LSIRDY) != 0){
+    if(--timeout == 0) {
+      return APP_TIMEOUT;
+    }
+  }
+  return APP_OK;
+}
+
 /**
   * @brief         Inicjalizacja LSE.
   * @note          Po wlaczeniu LSE mozna jedynie zmniejszyc drive
   */
 App_StatusTypeDef RCC_LSE_Init(bool bypass, LSE_XTAL_Drive_t drive, uint32_t timeout){
-  uint32_t timeout_disable = timeout;
-  uint32_t timeout_enable = timeout;
+  uint32_t timeout_disable = timeout, timeout_enable = timeout;
 
+  App_StatusTypeDef status = CLK_ACQUIRE_CLOCK(CLOCK_LSE);
+  if (status != APP_OK) return status;  
+  
   RCC->BDCR &= ~RCC_BDCR_LSEON;
   while((RCC->BDCR & RCC_BDCR_LSEON)==0){
-    if(--timeout_disable == 0) return APP_TIMEOUT;
+    if(--timeout_disable == 0) {
+      status = CLK_RELEASE_CLOCK(CLOCK_LSE);
+      if (status != APP_OK) return status;
+      return APP_TIMEOUT;
+    }
   }
   
   uint8_t drive_val = 0x0;
@@ -260,14 +370,34 @@ App_StatusTypeDef RCC_LSE_Init(bool bypass, LSE_XTAL_Drive_t drive, uint32_t tim
   
   RCC->BDCR |= RCC_BDCR_LSEON;
   while((RCC->BDCR & RCC_BDCR_LSEON)!=0){
-    if(--timeout_enable == 0) return APP_TIMEOUT;
+    if(--timeout_enable == 0) {
+      status = CLK_RELEASE_CLOCK(CLOCK_LSE);
+      if (status != APP_OK) return status;
+      return APP_TIMEOUT;
+    }
   }
 
   return APP_OK;
 }
 
 /**
-  * @brief         Inicjalizacja LSE.
+  * @brief         Deinicjalizacja LSE.
+  */
+App_StatusTypeDef RCC_LSE_Deinit(uint32_t timeout){
+  App_StatusTypeDef status = CLK_RELEASE_CLOCK(CLOCK_LSE);
+  if (status != APP_OK) return status;  
+  
+  RCC->BDCR &= ~RCC_BDCR_LSEON;
+  while((RCC->BDCR & RCC_BDCR_LSEON)!=0){
+    if(--timeout == 0) {
+      return APP_TIMEOUT;
+    }
+  }
+  return APP_OK;
+}
+
+/**
+  * @brief         Zmiana drive LSE.
   */
 App_StatusTypeDef RCC_LSE_ChangeDrive(LSE_XTAL_Drive_t drive, uint32_t timeout){
   LSE_XTAL_Drive_t drive_current = RCC_LSE_GetDrive();
@@ -315,6 +445,9 @@ App_StatusTypeDef RCC_RTC_Init(RTC_Source_t source){
     __NOP();
   }
 
+  App_StatusTypeDef status = CLK_ACQUIRE_PERIPH(PERIPH_RTC);
+  if (status != APP_OK) return status;  
+
   PWR->CR1 |= PWR_CR1_DBP;
 
   RCC->BDCR &= ~RCC_BDCR_RTCEN;
@@ -323,15 +456,27 @@ App_StatusTypeDef RCC_RTC_Init(RTC_Source_t source){
 
   switch (source) {
   case RTC_SOURCE_LSE:
-    if(!(RCC->BDCR & RCC_BDCR_LSERDY)) return APP_NOT_READY;
+    if(!(RCC->BDCR & RCC_BDCR_LSERDY)){
+      status = CLK_RELEASE_PERIPH(PERIPH_RTC);
+      if (status != APP_OK) return status; 
+      return APP_NOT_READY;
+    }
     source_val = 0x1 << RCC_BDCR_RTCSEL_Pos;
     break;
   case RTC_SOURCE_LSI:
-    if(!(RCC->CSR & RCC_CSR_LSIRDY)) return APP_NOT_READY;
+    if(!(RCC->CSR & RCC_CSR_LSIRDY)){
+      status = CLK_RELEASE_PERIPH(PERIPH_RTC);
+      if (status != APP_OK) return status; 
+      return APP_NOT_READY;
+    };
     source_val = 0x2 << RCC_BDCR_RTCSEL_Pos;
     break;
   case RTC_SOURCE_HSE:
-    if(!(RCC->CR & RCC_CR_HSERDY)) return APP_NOT_READY;
+    if(!(RCC->CR & RCC_CR_HSERDY)){
+      status = CLK_RELEASE_PERIPH(PERIPH_RTC);
+      if (status != APP_OK) return status; 
+      return APP_NOT_READY;
+    };
     source_val = 0x3 << RCC_BDCR_RTCSEL_Pos;
     break;
   default:
@@ -342,7 +487,7 @@ App_StatusTypeDef RCC_RTC_Init(RTC_Source_t source){
     __NOP(); 
     }
     return APP_INVALID_PARAM;
-}
+  }
   
   RCC->BDCR &= ~RCC_BDCR_RTCSEL;
   RCC->BDCR |= source_val;
@@ -356,6 +501,43 @@ App_StatusTypeDef RCC_RTC_Init(RTC_Source_t source){
   return APP_OK;
 }
 /* Funkcje diagnostyczne */
+
+/**
+  * @brief         Zwrot wartosci MSI w Hz do wartosci uint16_t
+  */
+uint32_t RCC_MSI_GetFreq(){
+  uint8_t freq = (RCC->CR & RCC_CR_MSIRANGE) >> RCC_CR_MSIRANGE_Pos;
+  switch (freq)
+  {
+  case 0x0:
+    return 100000;
+    break;
+  case 0x1:
+    return 200000;
+  case 0x2:
+    return 400000;
+  case 0x3:
+    return 800000;
+  case 0x4:
+    return 1000000;
+  case 0x5:
+    return 2000000;
+  case 0x6:
+    return 4000000;
+  case 0x7:
+    return 8000000;
+  case 0x8:
+    return 16000000;
+  case 0x9:
+    return 24000000;
+  case 0xA:
+    return 32000000;
+  case 0xB:
+    return 48000000;
+  default:
+    return 0;
+  }
+}
 
 /**
   * @brief         Sprawdzenie czy czestotliwosc wyjsciowa PLL nie przekracza zakresu

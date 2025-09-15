@@ -34,7 +34,7 @@ typedef enum __attribute__((packed)){
 } SYSCLK_Source_t;
 
 
-/* Funkcje inicjalizacji */
+/* Funkcje inicjalizacji i deinicjalizacji */
 /**
   * @brief         Inicjalizacja oscylatora MSI.
   * @param msi_range Zakres częstotliwości MSI (patrz dokumentacja RCC_CSR_MSISRANGE_*)
@@ -45,12 +45,28 @@ typedef enum __attribute__((packed)){
 App_StatusTypeDef RCC_MSI_Init(uint8_t msi_range, uint32_t timeout);
 
 /**
+  * @brief         Deinicjalizacja oscylatora MSI.
+  * @param timeout    Timeout w cyklach pętli sysclk
+  * @retval        App_StatusTypeDef Status operacji
+  */
+App_StatusTypeDef RCC_MSI_Deinit(uint32_t timeout);
+
+
+/**
   * @brief         Inicjalizacja oscylatora HSE.
   * @param bypass    Tryb bypass (true/false), czyli czy HSE ma byc bypassowane przez zewnetrzny zegar (false - HSE oscylator nie jest bypassowany)
   * @param timeout    Timeout w cyklach pętli sysclk
   * @retval        App_StatusTypeDef Status operacji
   */
 App_StatusTypeDef RCC_HSE_Init(bool bypass, uint32_t timeout);
+
+/**
+  * @brief         Deinicjalizacja oscylatora HSE.
+  * @param timeout    Timeout w cyklach pętli sysclk
+  * @retval        App_StatusTypeDef Status operacji
+  */
+App_StatusTypeDef RCC_HSE_Deinit(bool bypass, uint32_t timeout);
+
 
 /**
   * @brief  Źródla PLL.
@@ -73,6 +89,13 @@ typedef enum __attribute__((packed)){
 App_StatusTypeDef RCC_PLLCLK_Init(PLL_Source_t source, uint8_t m, uint8_t n, uint8_t r, uint32_t timeout);
 
 /**
+  * @brief         Deinicjalizacja PLL.
+  * @param timeout    Timeout w cyklach pętli sysclk
+  * @retval        App_StatusTypeDef Status operacji
+  */
+App_StatusTypeDef RCC_PLLCLK_Deinit(uint32_t timeout);
+
+/**
   * @brief         Wybór źródła clocka systemowego.
   * @param source  Źródło clocka do wyboru
   * @param timeout Timeout w cyklach pętli
@@ -86,6 +109,13 @@ App_StatusTypeDef RCC_SYSCLK_SelectSource(SYSCLK_Source_t source, uint32_t timeo
   * @retval        App_StatusTypeDef Status operacji
   */
 App_StatusTypeDef RCC_LSI_Init(uint32_t timeout);
+
+/**
+  * @brief         Deinicjalizacja LSI.
+  * @param timeout Timeout w cyklach pętli
+  * @retval        App_StatusTypeDef Status operacji
+  */
+App_StatusTypeDef RCC_LSI_Deinit(uint32_t timeout);
 
 /**
   * @brief        Typy drive XTAL dla LSE
@@ -106,6 +136,13 @@ typedef enum __attribute__((packed)){
   * @retval        App_StatusTypeDef Status operacji
   */
 App_StatusTypeDef RCC_LSE_Init(bool bypass, LSE_XTAL_Drive_t drive, uint32_t timeout);
+
+/**
+  * @brief         Deinicjalizacja LSE.
+  * @param timeout Timeout w cyklach pętli
+  * @retval        App_StatusTypeDef Status operacji
+  */
+App_StatusTypeDef RCC_LSE_Deinit(uint32_t timeout);
 
 /**
   * @brief         Zmiana drive LSE.
