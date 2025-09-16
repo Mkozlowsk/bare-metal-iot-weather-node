@@ -35,6 +35,8 @@
 - [ ] CI: Przygotowanie rozszerzonego CI:
 - [ ] CI: selfhosting hardware
 - [ ] CI: symulacja Qemu
+- [ ] CD: generacja dokumentacji doxygen
+
 - [ ] GPIO: Implementacja GPIO
 - [ ] UART: Implementacja UART z przerwaniami do debugowania
 - [ ] SERIAL: Implementacja Serial

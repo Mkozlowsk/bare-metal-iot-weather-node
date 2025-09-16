@@ -65,7 +65,7 @@ App_StatusTypeDef RCC_HSE_Init(bool bypass, uint32_t timeout);
   * @param timeout    Timeout w cyklach pętli sysclk
   * @retval        App_StatusTypeDef Status operacji
   */
-App_StatusTypeDef RCC_HSE_Deinit(bool bypass, uint32_t timeout);
+App_StatusTypeDef RCC_HSE_Deinit(uint32_t timeout);
 
 
 /**
@@ -165,11 +165,15 @@ typedef enum __attribute__((packed)){
 /**
   * @brief         Inicjalizacja RTC.
   * @param source  RTC_Source_t zrodlo RTC
-  * @param timeout Timeout w cyklach pętli
   * @retval        App_StatusTypeDef Status operacji
   */
 App_StatusTypeDef RCC_RTC_Init(RTC_Source_t source);
 
+/**
+  * @brief         Deinicjalizacja RTC.
+  * @retval        App_StatusTypeDef Status operacji
+  */
+App_StatusTypeDef RCC_RTC_Deinit();
 
 /* Funkcje diagnostyczne */
 
@@ -192,7 +196,9 @@ uint32_t RCC_PLLCLK_GetFrequency(void);
   */
 PLL_Source_t RCC_PLLCLK_GetSource(void);
 
-/**
+/**typedef enum ClockId_t ClockId_t;
+typedef enum BusId_t BusId_t;
+typedef enum PeripheralId_t PeripheralId_t;
   * @brief          Zwrot wartosci czestotliwosci zegara MSI w Hz do wartosci uint32_t
   * @retval         uint16_t Częstotliwość w Hz.
   */

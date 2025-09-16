@@ -133,7 +133,7 @@ App_StatusTypeDef RCC_HSE_Init(bool bypass, uint32_t timeout){
 /**
   * @brief         Deinicjalizacja zewnetrznego oscylatora HSE.
   */
-App_StatusTypeDef RCC_HSE_Deinit(bool bypass, uint32_t timeout){
+App_StatusTypeDef RCC_HSE_Deinit(uint32_t timeout){
   
   //Sprawdzenie zaleznosci zegara przed wylaczeniem
   App_StatusTypeDef status = CLK_RELEASE_CLOCK(CLOCK_HSE);
@@ -348,7 +348,7 @@ App_StatusTypeDef RCC_LSE_Init(bool bypass, LSE_XTAL_Drive_t drive, uint32_t tim
   if (status != APP_OK) return status;  
   
   RCC->BDCR &= ~RCC_BDCR_LSEON;
-  while((RCC->BDCR & RCC_BDCR_LSEON)==0){
+  while((RCC->BDCR & RCC_BDCR_LSERDY)==0){
     if(--timeout_disable == 0) {
       status = CLK_RELEASE_CLOCK(CLOCK_LSE);
       if (status != APP_OK) return status;
@@ -369,7 +369,7 @@ App_StatusTypeDef RCC_LSE_Init(bool bypass, LSE_XTAL_Drive_t drive, uint32_t tim
   RCC->BDCR |= (drive_val<<RCC_BDCR_LSEDRV_Pos); 
   
   RCC->BDCR |= RCC_BDCR_LSEON;
-  while((RCC->BDCR & RCC_BDCR_LSEON)!=0){
+  while((RCC->BDCR & RCC_BDCR_LSERDY)!=0){
     if(--timeout_enable == 0) {
       status = CLK_RELEASE_CLOCK(CLOCK_LSE);
       if (status != APP_OK) return status;
@@ -388,7 +388,7 @@ App_StatusTypeDef RCC_LSE_Deinit(uint32_t timeout){
   if (status != APP_OK) return status;  
   
   RCC->BDCR &= ~RCC_BDCR_LSEON;
-  while((RCC->BDCR & RCC_BDCR_LSEON)!=0){
+  while((RCC->BDCR & RCC_BDCR_LSERDY)!=0){
     if(--timeout == 0) {
       return APP_TIMEOUT;
     }
@@ -412,14 +412,14 @@ App_StatusTypeDef RCC_LSE_ChangeDrive(LSE_XTAL_Drive_t drive, uint32_t timeout){
     uint32_t timeout_enable = timeout;
 
     RCC->BDCR &= ~RCC_BDCR_LSEON;
-    while((RCC->BDCR & RCC_BDCR_LSEON)==0){
+    while((RCC->BDCR & RCC_BDCR_LSERDY)==0){
       if(--timeout_disable == 0) return APP_TIMEOUT;
     }
     
     RCC->BDCR |= (drive << RCC_BDCR_LSEDRV_Pos);
 
     RCC->BDCR |= RCC_BDCR_LSEON;
-    while((RCC->BDCR & RCC_BDCR_LSEON)!=0){
+    while((RCC->BDCR & RCC_BDCR_LSERDY)!=0){
       if(--timeout_enable == 0) return APP_TIMEOUT;
     } 
   }
@@ -437,6 +437,33 @@ App_StatusTypeDef RCC_LSE_ChangeDrive(LSE_XTAL_Drive_t drive, uint32_t timeout){
  */
 
 App_StatusTypeDef RCC_RTC_Init(RTC_Source_t source){
+
+  //Sprawdzenie gotowosci zrodla
+  uint16_t source_val = 0;  
+  switch (source) {
+  case RTC_SOURCE_LSE:
+    if(!(RCC->BDCR & RCC_BDCR_LSERDY)){
+      return APP_NOT_READY;
+    }
+    source_val = 0x1 << RCC_BDCR_RTCSEL_Pos;
+    break;
+  case RTC_SOURCE_LSI:
+    if(!(RCC->CSR & RCC_CSR_LSIRDY)){
+      return APP_NOT_READY;
+    };
+    source_val = 0x2 << RCC_BDCR_RTCSEL_Pos;
+    break;
+  case RTC_SOURCE_HSE:
+    if(!(RCC->CR & RCC_CR_HSERDY)){
+      return APP_NOT_READY;
+    };
+    source_val = 0x3 << RCC_BDCR_RTCSEL_Pos;
+    break;
+  default:
+    return APP_INVALID_PARAM;
+  }
+
+  //Sprawdzenie czy APB1 jest wlaczone, jesli nie nastepuje jego wlaczenie
   bool is_apb1_enabled = 0;
   if(RCC->APB1ENR1 & RCC_APB1ENR1_PWREN) is_apb1_enabled = 1;
   else {
@@ -448,58 +475,61 @@ App_StatusTypeDef RCC_RTC_Init(RTC_Source_t source){
   App_StatusTypeDef status = CLK_ACQUIRE_PERIPH(PERIPH_RTC);
   if (status != APP_OK) return status;  
 
+  //Wlaczenie peryferiow do konfiguracji RTC i wylaczenie samego RTC
   PWR->CR1 |= PWR_CR1_DBP;
-
   RCC->BDCR &= ~RCC_BDCR_RTCEN;
 
-  uint16_t source_val = 0;  if(RCC->APB1ENR1 & RCC_APB1ENR1_PWREN) is_apb1_enabled = 1;
-
-  switch (source) {
-  case RTC_SOURCE_LSE:
-    if(!(RCC->BDCR & RCC_BDCR_LSERDY)){
-      status = CLK_RELEASE_PERIPH(PERIPH_RTC);
-      if (status != APP_OK) return status; 
-      return APP_NOT_READY;
-    }
-    source_val = 0x1 << RCC_BDCR_RTCSEL_Pos;
-    break;
-  case RTC_SOURCE_LSI:
-    if(!(RCC->CSR & RCC_CSR_LSIRDY)){
-      status = CLK_RELEASE_PERIPH(PERIPH_RTC);
-      if (status != APP_OK) return status; 
-      return APP_NOT_READY;
-    };
-    source_val = 0x2 << RCC_BDCR_RTCSEL_Pos;
-    break;
-  case RTC_SOURCE_HSE:
-    if(!(RCC->CR & RCC_CR_HSERDY)){
-      status = CLK_RELEASE_PERIPH(PERIPH_RTC);
-      if (status != APP_OK) return status; 
-      return APP_NOT_READY;
-    };
-    source_val = 0x3 << RCC_BDCR_RTCSEL_Pos;
-    break;
-  default:
-    PWR->CR1 &= ~PWR_CR1_DBP;
-    if(is_apb1_enabled == 0){
-    RCC->APB1ENR1 &= ~RCC_APB1ENR1_PWREN; //jesli apb1 bylo wylaczone przed wywolaniem funkcji z powrtoem je wylacz
-    __NOP(); 
-    __NOP(); 
-    }
-    return APP_INVALID_PARAM;
-  }
-  
+  //Konfiguracja RTC
   RCC->BDCR &= ~RCC_BDCR_RTCSEL;
   RCC->BDCR |= source_val;
+
+  //Wlaczenie RTC i wylaczenie peryferiow wymaganych do jego konfiguracji
   RCC->BDCR |= RCC_BDCR_RTCEN;
   PWR->CR1 &= ~PWR_CR1_DBP;
+  
+  //jesli apb1 bylo wylaczone przed wywolaniem funkcji nalezy je ponownie wylaczyc
   if(is_apb1_enabled == 0){
-    RCC->APB1ENR1 &= ~RCC_APB1ENR1_PWREN; //jesli apb1 bylo wylaczone przed wywolaniem funkcji z powrtoem je wylacz
+    RCC->APB1ENR1 &= ~RCC_APB1ENR1_PWREN; 
     __NOP(); 
     __NOP(); 
   }
   return APP_OK;
 }
+
+/**
+  * @brief         Deinicjalizacja RTC.
+  * @retval        App_StatusTypeDef Status operacji
+  */
+App_StatusTypeDef RCC_RTC_Deinit(){
+  //Sprawdzenie czy APB1 jest wlaczone, jesli nie nastepuje jego wlaczenie
+  bool is_apb1_enabled = 0;
+  if(RCC->APB1ENR1 & RCC_APB1ENR1_PWREN) is_apb1_enabled = 1;
+  else {
+    RCC->APB1ENR1 |= RCC_APB1ENR1_PWREN;
+    __NOP();
+    __NOP();
+  }
+
+  App_StatusTypeDef status = CLK_RELEASE_PERIPH(PERIPH_RTC);
+  if (status != APP_OK) return status;  
+
+  //Wlaczenie peryferiow do konfiguracji RTC i wylaczenie samego RTC
+  PWR->CR1 |= PWR_CR1_DBP;
+  RCC->BDCR &= ~RCC_BDCR_RTCEN;
+
+  //wylaczenie peryferiow wymaganych do jego konfiguracji
+  PWR->CR1 &= ~PWR_CR1_DBP;
+
+  //jesli apb1 bylo wylaczone przed wywolaniem funkcji nalezy je ponownie wylaczyc
+  if(is_apb1_enabled == 0){
+    RCC->APB1ENR1 &= ~RCC_APB1ENR1_PWREN; 
+    __NOP(); 
+    __NOP(); 
+  }
+
+  return APP_OK;
+}
+
 /* Funkcje diagnostyczne */
 
 /**

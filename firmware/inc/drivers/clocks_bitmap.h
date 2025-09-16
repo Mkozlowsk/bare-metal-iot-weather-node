@@ -133,6 +133,6 @@ void CLK_BitmapInit(void);
     CLK_Release(ACQUIRE_TYPE_BUS, (AcquireTarget_t){.bus = (val)})
 
 #define CLK_RELEASE_RAW(val, val_mask) \
-    CLK_Release(ACQUIRE_TYPE_RAW, (AcquireTarget_t){.raw = {(reg), (val_mask)}})
+    CLK_Release(ACQUIRE_TYPE_RAW, (AcquireTarget_t){.raw = {(val), (val_mask)}})
 
 #endif // CLOCKS_BITMAP_H
